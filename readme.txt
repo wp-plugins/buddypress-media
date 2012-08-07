@@ -22,7 +22,7 @@ BuddyPress Media Component adds multimedia features to your BuddyPress based soc
 == Installation ==
 Install the plugin from the 'Plugins' section in your dashboard (Plugins > Add New > Search for BuddyPress Media).
 
-Alternatively you can [download](http://downloads.wordpress.org/plugin/buddypress-media.zip) the plugin from the repository. Unzip it and upload it to the plugins folder of your WordPress installation (wp-content/plugins/ directory of your WordPress installation).  
+Alternatively you can [download lastest version](http://downloads.wordpress.org/plugin/buddypress-media.2.0.zip) of BuddyPress Media Component plugin from the repository. Unzip it and upload it to the plugins folder of your WordPress installation (wp-content/plugins/ directory of your WordPress installation).  
   
 Activate it through the 'Plugins' section.
 
