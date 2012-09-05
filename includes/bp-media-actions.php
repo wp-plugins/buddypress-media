@@ -5,13 +5,37 @@
  * @since BP Media 2.0
  */
 function bp_media_handle_uploads() {
-	global $bp;
+	global $bp,$bp_media_options;
+	global $bp_media_options;
+	$bp_media_options = get_option('bp_media_options',array(
+		'videos_enabled'	=>	true,
+		'audio_enabled'		=>	true,
+		'images_enabled'	=>	true,
+	));
 	if (isset($_POST['action']) && $_POST['action'] == 'wp_handle_upload') {
 		if (isset($_FILES) && is_array($_FILES) && array_key_exists('bp_media_file', $_FILES) && $_FILES['bp_media_file']['name'] != '') {
+			if(preg_match('/image/',$_FILES['bp_media_file']['type'])){
+				if($bp_media_options['images_enabled']==false){
+					$bp->{BP_MEDIA_SLUG}->messages['error'][] = __('Image uploads are disabled');
+					return;
+				}
+			}
+			else if(preg_match('/video/',$_FILES['bp_media_file']['type'])){
+				if($bp_media_options['videos_enabled']==false){
+					$bp->{BP_MEDIA_SLUG}->messages['error'][] = __('Video uploads are disabled');
+					return;
+				}
+			}
+			else if(preg_match('/audio/',$_FILES['bp_media_file']['type'])){
+				if($bp_media_options['audio_enabled']==false){
+					$bp->{BP_MEDIA_SLUG}->messages['error'][] = __('Audio uploads are disabled');
+					return;
+				}
+			}
 			$bp_media_entry = new BP_Media_Host_Wordpress();
 			try {
 				$title = isset($_POST['bp_media_title']) ? ($_POST['bp_media_title'] != "") ? $_POST['bp_media_title'] : pathinfo($_FILES['bp_media_file']['name'], PATHINFO_FILENAME) : pathinfo($_FILES['bp_media_file']['name'], PATHINFO_FILENAME);
-				$entry = $bp_media_entry->add_media($title, $_POST['bp_media_description']);
+				$entry = $bp_media_entry->add_media($title, array_key_exists('bp_media_description',$_POST)?$_POST['bp_media_description']:'');
 				$bp->{BP_MEDIA_SLUG}->messages['updated'][] = __('Upload Successful', 'bp-media');
 			} catch (Exception $e) {
 				$bp->{BP_MEDIA_SLUG}->messages['error'][] = $e->getMessage();
@@ -83,7 +107,26 @@ function bp_media_delete_activity_handler($activity_id, $user) {
 }
 
 /* Adds bp_media_delete_activity_handler() function to be called on bp_activity_before_action_delete_activity hook */
-add_action('bp_activity_before_action_delete_activity', 'bp_media_delete_activity_handler', 10, 2);
+//add_action('bp_before_activity_delete', 'bp_media_delete_activity_handler', 1, 2);
+//The above hook isn't at right place yet, so skipped it till its corrected
+//add_action('bp_activity_before_action_delete_activity', 'bp_media_delete_activity_handler', 10, 2);
+
+function bp_media_delete_activity_handler_old($args){
+	global $bp_media_count,$wpdb;
+	
+	if(!array_key_exists('id', $args))
+		return;
+	
+	$activity_id=$args['id'];
+	$query="SELECT post_id from $wpdb->postmeta WHERE meta_key='bp_media_child_activity' AND meta_value=$activity_id";
+	$result=$wpdb->get_results($query);
+	if(!(is_array($result)&& count($result)==1 ))
+		return;
+	$post_id=$result[0]->post_id;
+	$media = new BP_Media_Host_Wordpress($post_id);
+	$media->delete_media();
+}
+add_action('bp_before_activity_delete', 'bp_media_delete_activity_handler_old');
 
 /**
  * Called on bp_init by screen functions
@@ -126,18 +169,21 @@ function bp_media_set_query() {
 }
 
 /**
- * Adds a download button on single entry pages of media files.
+ * Adds a download button and edit button on single entry pages of media files.
  * 
  * @since BP Media 2.0
  */
-function bp_media_action_download_button() {
+function bp_media_action_buttons() {
 	if(!in_array('bp_media_current_entry', $GLOBALS))
 		return false;
 	global $bp_media_current_entry;
-	if($bp_media_current_entry!=NULL)
+	if($bp_media_current_entry!=NULL){
+		if(bp_displayed_user_id()==  bp_loggedin_user_id())	echo '<a href="'.$bp_media_current_entry->get_edit_url().'" class="button item-button bp-secondary-action bp-media-edit" title="Edit Media">Edit</a>';
 		echo '<a href="'.$bp_media_current_entry->get_attachment_url().'" class="button item-button bp-secondary-action bp-media-download" title="Download">Download</a>';
+		
+	}
 }
-add_action('bp_activity_entry_meta', 'bp_media_action_download_button'); 
+add_action('bp_activity_entry_meta', 'bp_media_action_buttons'); 
 
 /* Should be used with Content Disposition Type for media files set to attachment */
 
@@ -183,4 +229,29 @@ function bp_media_footer() { ?>
 }
 if(get_option('bp_media_remove_linkback')!='1')
 	add_action('bp_footer','bp_media_footer');
+
+function bp_media_upload_enqueue(){
+	$params=array(
+		'url'=>plugins_url('bp-media-upload-handler.php',__FILE__),
+		'runtimes'	=>	'gears,html5,flash,silverlight,browserplus',
+		'browse_button'	=>	'bp-media-upload-browse-button',
+		'container'	=>	'bp-media-upload-ui',
+		'drop_element' =>	'drag-drop-area',
+		'filters'	=>	array(array('title' => "Media Files",'extensions'=> "mp4,jpg,png,jpeg,gif,mp3")),
+		'max_file_size'	=>	'100mb',
+		'multipart'           => true,
+		'urlstream_upload'    => true,
+		'flash_swf_url'       => includes_url( 'js/plupload/plupload.flash.swf' ),
+		'silverlight_xap_url' => includes_url( 'js/plupload/plupload.silverlight.xap' ),
+		'file_data_name'      => 'bp_media_file', // key passed to $_FILE.
+		'multi_selection'		=> true,
+		'multipart_params'	=> array('action'=>'wp_handle_upload')
+		//var resize_height = 1024, resize_width = 1024,wpUploaderInit = {"runtimes":"html5,silverlight,flash,html4","browse_button":"plupload-browse-button","container":"plupload-upload-ui","drop_element":"drag-drop-area","file_data_name":"async-upload","multiple_queues":true,"max_file_size":"524288000b","url":"http:\/\/dummy\/pdfconverter\/wp-admin\/async-upload.php","flash_swf_url":"http:\/\/dummy\/pdfconverter\/wp-includes\/js\/plupload\/plupload.flash.swf","silverlight_xap_url":"http:\/\/dummy\/pdfconverter\/wp-includes\/js\/plupload\/plupload.silverlight.xap","filters":[{"title":"Allowed Files","extensions":"*"}],"multipart":true,"urlstream_upload":true,"multipart_params":{"post_id":0,"_wpnonce":"14a410f0fa","type":"","tab":"","short":"1"}};
+	);		
+	wp_enqueue_script('bp-media-uploader',plugins_url('js/bp-media-uploader.js',__FILE__),array('plupload', 'plupload-html5', 'plupload-flash', 'plupload-silverlight', 'plupload-html4','plupload-handlers'));
+	wp_localize_script('bp-media-uploader','bp_media_uploader_params',$params);
+	wp_enqueue_style('bp-media-uploader',plugins_url('css/bp-media-uploader.css',__FILE__));
+}
+//add_action('wp_enqueue_scripts','bp_media_upload_enqueue');
+//This is used only on the uploads page
 ?>

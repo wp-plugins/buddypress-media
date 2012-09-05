@@ -9,6 +9,7 @@ if (!defined('ABSPATH'))
 /* Slug Constants */
 define('BP_MEDIA_SLUG', 'media');
 define('BP_MEDIA_UPLOAD_SLUG', 'upload');
+define('BP_MEDIA_DELETE_SLUG', 'delete');
 
 define('BP_MEDIA_IMAGES_SLUG', 'images');
 define('BP_MEDIA_IMAGES_ENTRY_SLUG', 'view');
@@ -79,6 +80,12 @@ $bp_media_default_excerpts=array(
 	'activity_entry_title'	=> 50,
 	'activity_entry_description'=>	500
 );
+
+$bp_media_options = get_option('bp_media_options',array(
+	'videos_enabled'	=>	true,
+	'audio_enabled'		=>	true,
+	'images_enabled'	=>	true,
+));
 
 /* To set the language according to the locale selected and availability of the language file. */
 if (file_exists(BP_MEDIA_PLUGIN_DIR . '/languages/' . get_locale() . '.mo'))
@@ -234,7 +241,16 @@ class BP_Media_Component extends BP_Component {
 			'parent_slug' => BP_MEDIA_IMAGES_SLUG, /* URL slug of the parent nav item */
 			'parent_url' => trailingslashit(bp_loggedin_user_domain() . BP_MEDIA_IMAGES_SLUG), /* URL of the parent item */
 			'position' => 90, /* Index of where this nav item should be positioned */
-			'screen_function' => 'bp_media_images_edit_screen', /* The name of the function to run when clicked */
+			'screen_function' => 'bp_media_images_screen', /* The name of the function to run when clicked */
+		));
+		
+		bp_core_new_subnav_item(array(
+			'name' => 'Delete', /* Display name for the nav item(It won't be shown anywhere) */
+			'slug' => BP_MEDIA_DELETE_SLUG, /* URL slug for the nav item */
+			'parent_slug' => BP_MEDIA_IMAGES_SLUG, /* URL slug of the parent nav item */
+			'parent_url' => trailingslashit(bp_loggedin_user_domain() . BP_MEDIA_IMAGES_SLUG), /* URL of the parent item */
+			'position' => 90, /* Index of where this nav item should be positioned */
+			'screen_function' => 'bp_media_images_screen', /* The name of the function to run when clicked */
 		));
 		
 		bp_core_new_subnav_item(array(
@@ -247,6 +263,15 @@ class BP_Media_Component extends BP_Component {
 		));
 		
 		bp_core_new_subnav_item(array(
+			'name' => 'Delete', /* Display name for the nav item(It won't be shown anywhere) */
+			'slug' => BP_MEDIA_DELETE_SLUG, /* URL slug for the nav item */
+			'parent_slug' => BP_MEDIA_AUDIO_SLUG, /* URL slug of the parent nav item */
+			'parent_url' => trailingslashit(bp_loggedin_user_domain() . BP_MEDIA_AUDIO_SLUG), /* URL of the parent item */
+			'position' => 90, /* Index of where this nav item should be positioned */
+			'screen_function' => 'bp_media_audio_screen', /* The name of the function to run when clicked */
+		));
+		
+		bp_core_new_subnav_item(array(
 			'name' => 'Edit', /* Display name for the nav item(It won't be shown anywhere) */
 			'slug' => BP_MEDIA_VIDEOS_EDIT_SLUG, /* URL slug for the nav item */
 			'parent_slug' => BP_MEDIA_VIDEOS_SLUG, /* URL slug of the parent nav item */
@@ -255,6 +280,15 @@ class BP_Media_Component extends BP_Component {
 			'screen_function' => 'bp_media_videos_edit_screen', /* The name of the function to run when clicked */
 		));
 
+		bp_core_new_subnav_item(array(
+			'name' => 'Delete', /* Display name for the nav item(It won't be shown anywhere) */
+			'slug' => BP_MEDIA_DELETE_SLUG, /* URL slug for the nav item */
+			'parent_slug' => BP_MEDIA_VIDEOS_SLUG, /* URL slug of the parent nav item */
+			'parent_url' => trailingslashit(bp_loggedin_user_domain() . BP_MEDIA_VIDEOS_SLUG), /* URL of the parent item */
+			'position' => 90, /* Index of where this nav item should be positioned */
+			'screen_function' => 'bp_media_videos_screen', /* The name of the function to run when clicked */
+		));
+		
 		bp_core_new_subnav_item(array(
 			'name' => 'Page', /* Display name for the nav item(It won't be shown anywhere) */
 			'slug' => 'page', /* URL slug for the nav item */
