@@ -10,8 +10,10 @@ class BP_Media_Host_Wordpress {
 		$url, //URL of the entry
 		$type, //Type of the entry (Video, Image or Audio)
 		$owner,   //Owner of the entry
-		$attachment_id; //The attachment ID of the media file
-
+		$attachment_id, //The attachment ID of the media file
+		$delete_url, //The delete url for the media
+		$edit_url; //The edit page's url for the media
+	
 	/**
 	 * Constructs a new BP_Media_Host_Wordpress element
 	 * 
@@ -39,7 +41,7 @@ class BP_Media_Host_Wordpress {
 			$media = &get_post($media_id);
 		}
 		if (empty($media->ID))
-			throw new Exception(__('Sorry, the requested entry does not exist.', 'bp-media'));
+			throw new Exception(__('Sorry, the requested media does not exist.', 'bp-media'));
 		$this->id = $media->ID;
 		$this->description = $media->post_content;
 		$this->name = $media->post_title;
@@ -48,12 +50,18 @@ class BP_Media_Host_Wordpress {
 		switch ($this->type) {
 			case 'video' :
 				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_VIDEOS_ENTRY_SLUG . '/' . $this->id);
+				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_VIDEOS_EDIT_SLUG . '/' . $this->id);
+				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
 				break;
 			case 'audio' :
 				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_AUDIO_ENTRY_SLUG . '/' . $this->id);
+				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_AUDIO_EDIT_SLUG . '/' . $this->id);
+				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
 				break;
 			case 'image' :
 				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_IMAGES_ENTRY_SLUG . '/' . $this->id);
+				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_IMAGES_EDIT_SLUG . '/' . $this->id);
+				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
 				break;
 			default :
 				return false;
@@ -226,7 +234,6 @@ class BP_Media_Host_Wordpress {
 
 	function get_media_single_content() {
 		global $bp_media_default_sizes, $bp_media_default_excerpts;
-
 		$content = '<div class="bp_media_title">' . wp_html_excerpt($this->name, $bp_media_default_excerpts['single_entry_title']) . '</div><div class="bp_media_content">';
 		switch ($this->type) {
 			case 'video' :
@@ -347,6 +354,23 @@ class BP_Media_Host_Wordpress {
 				</div>
 				<?php
 			endwhile;
+		else: ?>
+			<div class="activity">
+					<ul id="activity-stream" class="activity-list item-list">
+						<li class="activity activity_update" id="activity-<?php echo $activity_id; ?>">
+							<div class="activity-content">
+								<?php do_action('bp_activity_entry_content'); ?>
+								<?php if (is_user_logged_in()) : ?>
+									<div class="activity-meta no-ajax">
+																				
+										<a href="<?php echo $this->get_delete_url(); ?>" class="button item-button bp-secondary-action delete-activity-single confirm" rel="nofollow">Delete</a>
+									</div>
+								<?php endif; ?>
+							</div>
+						</li>
+					</ul>
+				</div>
+			<?
 		endif;
 	}
 
@@ -356,6 +380,65 @@ class BP_Media_Host_Wordpress {
 
 	function get_attachment_url(){
 		return wp_get_attachment_url($this->attachment_id);
+	}
+	
+	function update_media($args=array()){
+		$defaults=array(
+			'name'	=>	$this->name,
+			'description'	=>	$this->description,
+			'owner'			=>	$this->owner
+		);
+		$args = wp_parse_args( $args, $defaults );
+		$post=get_post($this->id,ARRAY_A);
+		$post['post_title']=esc_html($args['name']);
+		$post['post_content']=esc_html($args['description']);
+		$post['post_author']=$args['owner'];
+		$result =  wp_update_post($post);
+		$this->init($this->id);
+		return $result;
+	}
+	
+	function delete_media(){
+		global $bp_media_count;
+		bp_media_init_count($this->owner);
+		switch ($this->type) {
+			case 'image':
+				$bp_media_count['images'] = intval($bp_media_count['images']) - 1;
+				break;
+			case 'video':
+				$bp_media_count['videos'] = intval($bp_media_count['videos']) - 1;
+				break;
+			case 'audio':
+				$bp_media_count['audio'] = intval($bp_media_count['audio']) - 1;
+				break;
+		}
+		
+		wp_delete_attachment($this->attachment_id);
+//		$activity_id = get_post_meta($post_id, 'bp_media_child_activity', true);
+//		if($activity_id)
+//			bp_activity_delete_by_activity_id($activity_id);
+		wp_delete_post($this->id);
+		bp_update_user_meta($this->owner, 'bp_media_count', $bp_media_count);
+	}
+	
+	function get_title() {
+		return $this->name;
+	}
+	
+	function get_content() {
+		return $this->description;
+	}
+	function get_author() {
+		return $this->owner;
+	}
+	function get_id(){
+		return $this->id;
+	}
+	function get_edit_url() {
+		return $this->edit_url;
+	}
+	function get_delete_url() {
+		return $this->delete_url;
 	}
 }
 ?>
