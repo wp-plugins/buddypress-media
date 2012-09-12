@@ -6,7 +6,6 @@
  */
 function bp_media_handle_uploads() {
 	global $bp,$bp_media_options;
-	global $bp_media_options;
 	$bp_media_options = get_option('bp_media_options',array(
 		'videos_enabled'	=>	true,
 		'audio_enabled'		=>	true,
@@ -32,7 +31,8 @@ function bp_media_handle_uploads() {
 					return;
 				}
 			}
-			$bp_media_entry = new BP_Media_Host_Wordpress();
+			$class_name = apply_filters('bp_media_transcoder','BP_Media_Host_Wordpress');
+			$bp_media_entry = new $class_name();
 			try {
 				$title = isset($_POST['bp_media_title']) ? ($_POST['bp_media_title'] != "") ? $_POST['bp_media_title'] : pathinfo($_FILES['bp_media_file']['name'], PATHINFO_FILENAME) : pathinfo($_FILES['bp_media_file']['name'], PATHINFO_FILENAME);
 				$entry = $bp_media_entry->add_media($title, array_key_exists('bp_media_description',$_POST)?$_POST['bp_media_description']:'');
