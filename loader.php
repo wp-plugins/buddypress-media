@@ -3,7 +3,7 @@
 Plugin Name: BuddyPress Media Component
 Plugin URI: http://rtcamp.com/buddypress-media/
 Description: This component adds missing media rich features like photos, videos and audios uploading to BuddyPress which are essential if you are building social network, seriously!
-Version: 2.1.1
+Version: 2.1.2
 Author: rtCamp
 Author URI: http://rtcamp.com
 */
@@ -12,7 +12,7 @@ Author URI: http://rtcamp.com
 define('BP_MEDIA_IS_INSTALLED', 1);
 
 /* Constant to store the current version of the BP Media Plugin. */
-define('BP_MEDIA_VERSION', '2.1.1');
+define('BP_MEDIA_VERSION', '2.1.2');
 
 /* A constant to be used as base for other URLs throughout the plugin */
 define('BP_MEDIA_PLUGIN_DIR', dirname(__FILE__));
@@ -35,7 +35,6 @@ define('BP_MEDIA_REQUIRED_BP','1.5.5');
 function bp_media_init() {
 	if (defined('BP_VERSION')&&version_compare(BP_VERSION, BP_MEDIA_REQUIRED_BP, '>')) {
 		require( BP_MEDIA_PLUGIN_DIR . '/includes/bp-media-loader.php' );
-		do_action('bp_media_init');
 	}
 }
 add_action('bp_include', 'bp_media_init');
@@ -44,7 +43,7 @@ add_action('bp_include', 'bp_media_init');
  * Function to do the tasks required to be done while activating the plugin
  */
 function bp_media_activate() {
-	//todo
+	update_option('bp_media_remove_linkback', '1');
 }
 register_activation_hook(__FILE__, 'bp_media_activate');
 
