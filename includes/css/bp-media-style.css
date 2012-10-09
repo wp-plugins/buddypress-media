@@ -1,8 +1,11 @@
 /* 
- *	Default stylesheet for BuddyPress Media Component
+ *	Default stylesheet for BuddyPress Media
 */
 .bp_media_content img{
 	max-width:98%;
+}
+.bp_media_content .mejs-poster img{
+	max-width: 100%;
 }
 .bp_media_title {
 	display:block;
