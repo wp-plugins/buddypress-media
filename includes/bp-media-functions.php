@@ -4,22 +4,11 @@ function bp_media_record_activity($args = '') {
 	if (!function_exists('bp_activity_add'))
 		return false;
 	$defaults = array(
-		'id' => false, // Pass an existing activity ID to update an existing entry.
-		'action' => '', // The activity action - e.g. "Jon Doe posted an update"
-		'content' => '', // Optional: The content of the activity item e.g. "BuddyPress is awesome guys!"
 		'component' => BP_MEDIA_SLUG, // The name/ID of the component e.g. groups, profile, mycomponent
-		'type' => false, // The activity type e.g. activity_update, profile_updated
-		'primary_link' => '', // Optional: The primary URL for this item in RSS feeds (defaults to activity permalink)
-		'user_id' => $bp->loggedin_user->id, // Optional: The user to record the activity for, can be false if this activity is not for a user.
-		'item_id' => false, // Optional: The ID of the specific item being recorded, e.g. a blog_id
-		'secondary_item_id' => false, // Optional: A second ID used to further filter e.g. a comment_id
-		'recorded_time' => bp_core_current_time(), // The GMT time that this activity was recorded
-		'hide_sitewide' => false  // Should this be hidden on the sitewide activity stream?
 	);
 	add_filter('bp_activity_allowed_tags', 'bp_media_override_allowed_tags');
 	$r = wp_parse_args($args, $defaults);
-	extract($r);
-	$activity_id = bp_activity_add(array('id' => $id, 'user_id' => $user_id, 'action' => $action, 'content' => $content, 'primary_link' => $primary_link, 'component' => $component, 'type' => $type, 'item_id' => $item_id, 'secondary_item_id' => $secondary_item_id, 'recorded_time' => $recorded_time, 'hide_sitewide' => $hide_sitewide));
+	$activity_id = bp_activity_add($r);
 	return $activity_id;
 }
 
@@ -50,6 +39,9 @@ function bp_media_override_allowed_tags($activity_allowedtags) {
 	$activity_allowedtags['a'] = array();
 	$activity_allowedtags['a']['title'] = array();
 	$activity_allowedtags['a']['href'] = array();
+	$activity_allowedtags['ul'] = array();
+	$activity_allowedtags['li'] = array();
+
 	return $activity_allowedtags;
 }
 
@@ -70,7 +62,8 @@ function bp_media_show_formatted_error_message($messages, $type) {
 }
 
 function bp_media_conditional_override_allowed_tags($content, $activity=null) {
-	if ($activity != null && $activity->type == 'media_upload') {
+	global $bp_media_activity_types;
+	if ($activity != null && in_array($activity->type,$bp_media_activity_types)) {
 		add_filter('bp_activity_allowed_tags', 'bp_media_override_allowed_tags', 1);
 	}
 	return bp_activity_filter_kses($content);
@@ -87,38 +80,37 @@ add_action('bp_init', 'bp_media_swap_filters');
  */
 function bp_media_update_count() {
 	global $wpdb;
-	$query = "SELECT COUNT(*) AS total,b.meta_value AS type,a.post_author 
-		FROM $wpdb->posts AS a,$wpdb->postmeta AS b 
-		WHERE (a.id = b.post_id) AND a.post_type='bp_media' AND b.meta_key='bp_media_type' 
-		GROUP BY b.meta_value,a.post_author";
+	$query =
+	"SELECT
+		post_author,
+		SUM(CASE WHEN post_mime_type LIKE 'image%' THEN 1 ELSE 0 END) as Images,
+		SUM(CASE WHEN post_mime_type LIKE 'audio%' THEN 1 ELSE 0 END) as Audio,
+		SUM(CASE WHEN post_mime_type LIKE 'video%' THEN 1 ELSE 0 END) as Videos,
+		SUM(CASE WHEN post_type LIKE 'bp_media_album' THEN 1 ELSE 0 END) as Albums,
+		COUNT(*) as Total
+	FROM
+		$wpdb->posts RIGHT JOIN $wpdb->postmeta on wp_postmeta.post_id = wp_posts.id
+	WHERE
+		`meta_key` = 'bp-media-key' AND
+		`meta_value` > 0 AND
+		( post_mime_type LIKE 'image%' OR post_mime_type LIKE 'audio%' OR post_mime_type LIKE 'video%' OR post_type LIKE 'bp_media_album')
+	GROUP BY post_author";
 	$result = $wpdb->get_results($query);
-	$users_count = array();
 	foreach ($result as $obj) {
-		$users_count[$obj->post_author][$obj->type] = $obj->total;
-	}
-	$users = get_users();
-	foreach ($users as $user) {
-		if (array_key_exists($user->ID, $users_count)) {
-			$count = array(
-				'images' => isset($users_count[$user->ID]['image']) ? intval($users_count[$user->ID]['image']) : 0,
-				'videos' => isset($users_count[$user->ID]['video']) ? intval($users_count[$user->ID]['video']) : 0,
-				'audio' => isset($users_count[$user->ID]['audio']) ? intval($users_count[$user->ID]['audio']) : 0,
+		$count = array(
+			'images' => $obj->Images,
+			'videos' => $obj->Videos,
+			'audio' => $obj->Audio,
+			'albums'=>	$obj->Albums
 			);
-		} else {
-			$count = array(
-				'images' => 0,
-				'videos' => 0,
-				'audio' => 0
-			);
-		}
-		bp_update_user_meta($user->ID, 'bp_media_count', $count);
+		bp_update_user_meta($obj->post_author, 'bp_media_count', $count);
 	}
 	return true;
 }
 
 function bp_media_update_media(){
 	global $bp_media_current_entry;
-	if($bp_media_current_entry->update_media(array('name'=> esc_html($_POST['bp_media_title']),'description'=> esc_html($_POST['bp_media_description'])))){
+	if($bp_media_current_entry->update_media(array('description'=> esc_html($_POST['bp_media_description']),'name'=>esc_html($_POST['bp_media_title'])))){
 		@setcookie('bp-message', 'The media has been updated' , time() + 60 * 60 * 24, COOKIEPATH);
 		@setcookie('bp-message-type', 'success' , time() + 60 * 60 * 24, COOKIEPATH);
 		wp_redirect($bp_media_current_entry->get_url());
@@ -187,4 +179,49 @@ function bp_media_get_feeds($feed_url = 'http://rtcamp.com/tag/buddypress/feed/'
 	</ul><?php
 }
 
+function bp_media_update_album_activity($album,$current_time = true,$delete_media_id = null){
+	if(!is_object($album)){
+		$album = new BP_Media_Album($album);
+	}
+	$args = array(
+		'post_parent' => $album->get_id(),
+		'numberposts'	=>	4,
+		'post_type'	=>	'attachment',
+	);
+	if($delete_media_id)
+		$args['exclude'] = $delete_media_id;
+	$attachments = get_posts($args);
+	if(is_array($attachments)){
+		$content = '<ul>';
+		foreach($attachments as $media){
+			$bp_media = new BP_Media_Host_Wordpress($media->ID);
+			$content .= $bp_media->get_album_activity_content();
+		}
+		$content .= '</ul>';
+		$activity_id = get_post_meta($album->get_id(), 'bp_media_child_activity');
+		if($activity_id){
+			$args = array(
+				'in' => $activity_id,
+			);
+
+			$activity = @bp_activity_get($args);
+			if(isset($activity['activities'][0]->id)){
+				$args = array(
+					'content'	=>	$content,
+					'id'	=>	$activity_id,
+					'type' => 'album_updated',
+					'user_id' => $activity['activities'][0]->user_id,
+					'action' => apply_filters( 'bp_media_filter_album_updated', sprintf( __( '%1$s added new media in album %2$s', 'bp-media'), bp_core_get_userlink( $activity['activities'][0]->user_id ), '<a href="' . $album->get_url() . '">' . $album->get_title() . '</a>' ) ),
+					'component' => BP_MEDIA_SLUG, // The name/ID of the component e.g. groups, profile, mycomponent
+					'primary_link' => $activity['activities'][0]->primary_link,
+					'item_id' => $activity['activities'][0]->item_id,
+					'secondary_item_id' => $activity['activities'][0]->secondary_item_id,
+					'recorded_time' => $current_time? bp_core_current_time(): $activity['activities'][0]->date_recorded,
+					'hide_sitewide' => $activity['activities'][0]->hide_sitewide
+				);
+				bp_media_record_activity($args);
+			}
+		}
+	}
+}
 ?>
