@@ -3,7 +3,7 @@
 Plugin Name: BuddyPress Media
 Plugin URI: http://rtcamp.com/buddypress-media/
 Description: This plugin adds missing media rich features like photos, videos and audios uploading to BuddyPress which are essential if you are building social network, seriously!
-Version: 2.2.4
+Version: 2.2.5
 Author: rtCamp
 Author URI: http://rtcamp.com
 */
@@ -12,7 +12,7 @@ Author URI: http://rtcamp.com
 define('BP_MEDIA_IS_INSTALLED', 1);
 
 /* Constant to store the current version of the BP Media Plugin. */
-define('BP_MEDIA_VERSION', '2.2.3');
+define('BP_MEDIA_VERSION', '2.2.5');
 
 /* A constant to be used as base for other URLs throughout the plugin */
 define('BP_MEDIA_PLUGIN_DIR', dirname(__FILE__));
@@ -21,7 +21,7 @@ define('BP_MEDIA_PLUGIN_DIR', dirname(__FILE__));
 define('BP_MEDIA_REQUIRED_BP','1.6');
 
 /* A constatnt to store database version */
-define('BP_MEDIA_DB_VERSION','2.0');
+define('BP_MEDIA_DB_VERSION','2.1');
 
 /* A constant to Active Collab API Assignee ID */
 define('BP_MEDIA_AC_API_ASSIGNEE_ID','5');
@@ -72,14 +72,17 @@ function bp_media_activate() {
 	update_option('bp_media_options',$bp_media_options);
 
 
-      $bpmquery = new WP_Query(array('post_type'=>'bp_media','posts_per_page'=>1));
-      if($bpmquery->found_posts > 0){
+	$bpmquery = new WP_Query(array('post_type'=>'bp_media','posts_per_page'=>1));
+	if($bpmquery->found_posts > 0){
 		update_option('bp_media_db_version', '1.0');
 	}else{
-		update_option('bp_media_db_version',BP_MEDIA_DB_VERSION);
+		switch(get_option('bp_media_db_version')){
+			case '2.0':
+				break;
+			default:
+				update_option('bp_media_db_version',BP_MEDIA_DB_VERSION);
+		}
 	}
-
-
 }
 
 register_activation_hook(__FILE__, 'bp_media_activate');
