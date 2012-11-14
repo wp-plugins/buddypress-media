@@ -92,12 +92,15 @@ $bp_media_default_excerpts=array(
 );
 
 global $bp_media_options;
-$bp_media_options = get_option('bp_media_options',array(
+$bp_media_options = get_site_option('bp_media_options',array(
 	'videos_enabled'	=>	true,
 	'audio_enabled'		=>	true,
 	'images_enabled'	=>	true,
 	'download_enabled'	=>	true
 ));
+
+global $bp_media_posts_per_page;
+$bp_media_posts_per_page = 10;
 
 global $bp_media_activity_types;
 $bp_media_activity_types = array('media_upload','album_updated','album_created');

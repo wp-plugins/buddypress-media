@@ -83,7 +83,7 @@ class BP_Media_Host_Wordpress {
 	 *
 	 * @since BP Media 2.0
 	 */
-	function add_media($name, $description, $album_id = 0, $group = 0) {
+	function add_media($name, $description, $album_id = 0, $group = 0, $is_multiple = false) {
 		do_action('bp_media_before_add_media');
 		global $bp, $wpdb, $bp_media_count;
 		include_once(ABSPATH . 'wp-admin/includes/file.php');
@@ -242,7 +242,7 @@ class BP_Media_Host_Wordpress {
 		else
 			update_post_meta($attachment_id, 'bp-media-key', (-$group));
 		bp_update_user_meta(bp_loggedin_user_id(), 'bp_media_count', $bp_media_count);
-		do_action('bp_media_after_add_media',$this);
+		do_action('bp_media_after_add_media',$this,$is_multiple);
 	}
 
 	/**
@@ -302,35 +302,41 @@ class BP_Media_Host_Wordpress {
 	}
 
 	/**
-	 * Returns the content of the single entry page of the Media Entry
+	 * Returns the HTML for content of the single entry page of the Media Entry
 	 */
 	function get_media_single_content() {
 		global $bp_media_default_sizes, $bp_media_default_excerpts;
-		$content = '<div class="bp_media_title">' . wp_html_excerpt($this->name, $bp_media_default_excerpts['single_entry_title']) . '</div><div class="bp_media_content">';
+		$content = '<div class="bp_media_content">';
 		switch ($this->type) {
 			case 'video' :
 				if($this->thumbnail_id){
 					$image_array = image_downsize($this->thumbnail_id, 'bp_media_single_image');
-					$content.='<video poster="'.$image_array[0].'" src="' . wp_get_attachment_url($this->id) . '" width="' . $bp_media_default_sizes['single_video']['width'] . '" height="' . ($bp_media_default_sizes['single_video']['height'] == 0 ? 'auto' : $bp_media_default_sizes['single_video']['height']) . '" type="video/mp4" id="bp_media_video_' . $this->id . '" controls="controls" preload="none"></video><script>bp_media_create_element("bp_media_video_' . $this->id . '");</script>';
+					$content.=apply_filters('bp_media_single_content_filter', '<video poster="'.$image_array[0].'" src="' . wp_get_attachment_url($this->id) . '" width="' . $bp_media_default_sizes['single_video']['width'] . '" height="' . ($bp_media_default_sizes['single_video']['height'] == 0 ? 'auto' : $bp_media_default_sizes['single_video']['height']) . '" type="video/mp4" id="bp_media_video_' . $this->id . '" controls="controls" preload="none"></video><script>bp_media_create_element("bp_media_video_' . $this->id . '");</script>',$this);
 				}
 				else{
-					$content.='<video src="' . wp_get_attachment_url($this->id) . '" width="' . $bp_media_default_sizes['single_video']['width'] . '" height="' . ($bp_media_default_sizes['single_video']['height'] == 0 ? 'auto' : $bp_media_default_sizes['single_video']['height']) . '" type="video/mp4" id="bp_media_video_' . $this->id . '" controls="controls" preload="none"></video><script>bp_media_create_element("bp_media_video_' . $this->id . '");</script>';
+					$content.=apply_filters('bp_media_single_content_filter', '<video src="' . wp_get_attachment_url($this->id) . '" width="' . $bp_media_default_sizes['single_video']['width'] . '" height="' . ($bp_media_default_sizes['single_video']['height'] == 0 ? 'auto' : $bp_media_default_sizes['single_video']['height']) . '" type="video/mp4" id="bp_media_video_' . $this->id . '" controls="controls" preload="none"></video><script>bp_media_create_element("bp_media_video_' . $this->id . '");</script>',$this);
 				}
 				break;
 			case 'audio' :
-				$content.='<audio src="' . wp_get_attachment_url($this->id) . '" width="' . $bp_media_default_sizes['single_audio']['width'] . '" type="audio/mp3" id="bp_media_audio_' . $this->id . '" controls="controls" preload="none" ></audio><script>bp_media_create_element("bp_media_audio_' . $this->id . '");</script>';
-				$type = 'audio';
+				$content.=apply_filters('bp_media_single_content_filter', '<audio src="' . wp_get_attachment_url($this->id) . '" width="' . $bp_media_default_sizes['single_audio']['width'] . '" type="audio/mp3" id="bp_media_audio_' . $this->id . '" controls="controls" preload="none" ></audio><script>bp_media_create_element("bp_media_audio_' . $this->id . '");</script>',$this);
 				break;
 			case 'image' :
 				$image_array = image_downsize($this->id, 'bp_media_single_image');
-				$content.='<img src="' . $image_array[0] . '" id="bp_media_image_' . $this->id . '" />';
-				$type = 'image';
+				$content.=apply_filters('bp_media_single_content_filter', '<img src="' . $image_array[0] . '" id="bp_media_image_' . $this->id . '" />',$this);
 				break;
 			default :
 				return false;
 		}
 		$content .= '</div>';
 		$content .= '<div class="bp_media_description">' . wp_html_excerpt($this->description, $bp_media_default_excerpts['single_entry_description']) . '</div>';
+		return $content;
+	}
+
+	/**
+	 * Returns the HTML for title of the single entry page of the Media Entry
+	 */
+	function get_media_single_title(){
+		$content = '<div class="bp_media_title">' . wp_html_excerpt($this->name, $bp_media_default_excerpts['single_entry_title']) . '</div>;';
 		return $content;
 	}
 
@@ -646,6 +652,13 @@ class BP_Media_Host_Wordpress {
 	 */
 	function get_title(){
 		return $this->name;
+	}
+
+	/**
+	 * Returns the type of media
+	 */
+	function get_type(){
+		return $this->type;
 	}
 }
 ?>
