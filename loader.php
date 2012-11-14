@@ -3,7 +3,7 @@
 Plugin Name: BuddyPress Media
 Plugin URI: http://rtcamp.com/buddypress-media/
 Description: This plugin adds missing media rich features like photos, videos and audios uploading to BuddyPress which are essential if you are building social network, seriously!
-Version: 2.2.5
+Version: 2.2.6
 Author: rtCamp
 Author URI: http://rtcamp.com
 */
@@ -12,7 +12,7 @@ Author URI: http://rtcamp.com
 define('BP_MEDIA_IS_INSTALLED', 1);
 
 /* Constant to store the current version of the BP Media Plugin. */
-define('BP_MEDIA_VERSION', '2.2.5');
+define('BP_MEDIA_VERSION', '2.2.6');
 
 /* A constant to be used as base for other URLs throughout the plugin */
 define('BP_MEDIA_PLUGIN_DIR', dirname(__FILE__));
@@ -46,6 +46,7 @@ define('BP_MEDIA_AC_API_CATEGORY_ID','224');
  */
 function bp_media_init() {
 	if (defined('BP_VERSION')&&version_compare(BP_VERSION, BP_MEDIA_REQUIRED_BP, '>')) {
+		add_filter( 'plugin_action_links', 'bp_media_settings_link', 10, 2 );
 		require( BP_MEDIA_PLUGIN_DIR . '/includes/bp-media-loader.php' );
 	}
 }
@@ -55,32 +56,32 @@ add_action('bp_include', 'bp_media_init');
  * Function to do the tasks required to be done while activating the plugin
  */
 function bp_media_activate() {
-	$bp_media_options = get_option('bp_media_options',array(
+	$bp_media_options = get_site_option('bp_media_options',array(
 		'videos_enabled'	=>	true,
 		'audio_enabled'		=>	true,
 		'images_enabled'	=>	true,
 		'remove_linkback'	=>	'1',
 		'download_enabled'	=>	true,
 	));
-	$previous_linkback_status = get_option('bp_media_remove_linkback');
+	$previous_linkback_status = get_site_option('bp_media_remove_linkback');
 	if($previous_linkback_status===false)
 		$bp_media_options['remove_linkback'] = '1';
 	else{
 		$bp_media_options['remove_linkback'] = $previous_linkback_status;
 		delete_option('bp_media_remove_linkback');
 	}
-	update_option('bp_media_options',$bp_media_options);
+	update_site_option('bp_media_options',$bp_media_options);
 
 
 	$bpmquery = new WP_Query(array('post_type'=>'bp_media','posts_per_page'=>1));
 	if($bpmquery->found_posts > 0){
-		update_option('bp_media_db_version', '1.0');
+		update_site_option('bp_media_db_version', '1.0');
 	}else{
-		switch(get_option('bp_media_db_version')){
+		switch(get_site_option('bp_media_db_version',false,false)){
 			case '2.0':
 				break;
 			default:
-				update_option('bp_media_db_version',BP_MEDIA_DB_VERSION);
+				update_site_option('bp_media_db_version',BP_MEDIA_DB_VERSION);
 		}
 	}
 }
@@ -128,13 +129,26 @@ add_action('admin_notices', 'bp_media_admin_notice');
 function bp_media_settings_link($links, $file) {
 	/* create link */
 	$plugin_name  = plugin_basename( __FILE__ );
+	$admin_link = bp_media_get_admin_url( add_query_arg( array( 'page' => 'bp-media-settings'  ), 'admin.php' ) );
 	if ( $file == $plugin_name ) {
 		array_unshift(
 			$links,
-			sprintf( '<a href="options-general.php?page=%s">%s</a>', 'bp-media-settings', __('Settings') )
+			sprintf( '<a href="%s">%s</a>', $admin_link, __('Settings') )
 		);
 	}
 	return $links;
 }
-add_filter( 'plugin_action_links', 'bp_media_settings_link', 10, 2 );
+
+function bp_media_get_admin_url( $path = '', $scheme = 'admin' ) {
+
+	// Links belong in network admin
+	if (is_multisite() )
+		$url = network_admin_url( $path, $scheme );
+
+	// Links belong in site admin
+	else
+		$url = admin_url( $path, $scheme );
+
+	return $url;
+}
 ?>

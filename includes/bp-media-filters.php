@@ -69,16 +69,6 @@ function bp_media_activity_parent_content_filter($activity_content) {
 }
 //add_filter('bp_get_activity_parent_content', 'bp_media_activity_parent_content_filter', 1);
 
-//function bp_media_activity_parent__content_filter($content) {
-//	add_shortcode('bp_media_action', 'bp_media_shortcode_action');
-//	add_shortcode('bp_media_content', 'bp_media_shortcode_content');
-//	$content=do_shortcode($content);
-//	remove_shortcode('bp_media_action');
-//	remove_shortcode('bp_media_content');
-//	return $content;
-//}
-//add_filter('bp_get_activity_parent_content', 'bp_media_activity_parent_content_filter');
-
 function bp_media_delete_button_handler($link) {
 	if(bp_current_component()=='media')
 		$link=str_replace('delete-activity ', 'delete-activity-single ', $link);
@@ -203,7 +193,7 @@ add_action( 'admin_bar_menu', 'bp_media_my_account_menu', 1 );
 function bp_media_adminbar_settings_menu() {
     global $wp_admin_bar;
 
-    if( current_user_can('manage_options') ){
+    if( current_user_can('manage_options') && is_super_admin() ){
 
         $bp_media_admin_nav = array();
         $title = '<span class="ab-icon"></span><span class="ab-label">' . _x( 'BP Media', 'admin bar menu group label' ) . '</span>';
