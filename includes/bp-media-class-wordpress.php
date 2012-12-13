@@ -4,7 +4,7 @@ class BP_Media_Host_Wordpress {
 	/**
 	 * Private variables not to be accessible outside this class' member functions
 	 */
-	private $id, //id of the entry
+	protected $id, //id of the entry
 		$name, //Name of the entry
 		$description, //Description of the entry
 		$url, //URL of the entry
@@ -13,7 +13,8 @@ class BP_Media_Host_Wordpress {
 		$delete_url, //The delete url for the media
 		$thumbnail_id, //The thumbnail's id
 		$album_id, //The album id to which the media belongs
-		$edit_url; //The edit page's url for the media
+		$edit_url, //The edit page's url for the media
+		$group_id; //The group id of the current media file if it belongs to a group
 
 	/**
 	 * Constructs a new BP_Media_Host_Wordpress element
@@ -48,34 +49,21 @@ class BP_Media_Host_Wordpress {
 		$this->name = $media->post_title;
 		$this->owner = $media->post_author;
 		$this->album_id = $media->post_parent;
+		$meta_key = get_post_meta($this->id, 'bp-media-key', true);
+		/**
+		 * We use bp-media-key to distinguish if the entry belongs to a group or not
+		 * if the value is less than 0 it means it the group id to which the media belongs
+		 * and if its greater than 0 then it means its the author id of the uploader
+		 * But for use in the class, we use group_id as positive integer even though
+		 * we use it as negative value in the bp-media-key meta key
+		 */
+		$this->group_id = $meta_key<0?-$meta_key:0;
 		preg_match_all('/audio|video|image/i', $media->post_mime_type, $result);
 		if(isset($result[0][0]))
 			$this->type = $result[0][0];
 		else
 			return false;
-		switch ($this->type) {
-			case 'video' :
-				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . $this->id);
-				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_VIDEOS_EDIT_SLUG . '/' . $this->id);
-				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
-				$this->thumbnail_id = get_post_meta($this->id, 'bp_media_thumbnail',true);
-				break;
-			case 'audio' :
-				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . $this->id);
-				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_AUDIO_EDIT_SLUG . '/' . $this->id);
-				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
-				$this->thumbnail_id = get_post_meta($this->id, 'bp_media_thumbnail',true);
-				break;
-			case 'image' :
-				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . $this->id);
-				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_IMAGES_EDIT_SLUG . '/' . $this->id);
-				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
-				$image_array = image_downsize($this->id, 'bp_media_single_image');
-				$this->thumbnail_id = $this->id;
-				break;
-			default :
-				return false;
-		}
+		$this->set_permalinks();
 	}
 
 	/**
@@ -88,27 +76,9 @@ class BP_Media_Host_Wordpress {
 		global $bp, $wpdb, $bp_media_count;
 		include_once(ABSPATH . 'wp-admin/includes/file.php');
 		include_once(ABSPATH . 'wp-admin/includes/image.php');
-		$create_new_album_flag = false;
-		if($album_id!=0){
-			$album = get_post($album_id);
-			if($album->post_author!=  get_current_user_id()){
-				$create_new_album_flag = true;
-			}
-			else{
-				$post_id = $album->ID;
-			}
-		}
-		else{
-			$create_new_album_flag = true;
-		}
-		if($create_new_album_flag){
-			$post_id = $wpdb->get_var( "SELECT ID FROM $wpdb->posts WHERE post_title = 'Wall Posts' AND post_author = '".  get_current_user_id()."' AND post_type='bp_media_album'");
-			if($post_id==null){
-				$album = new BP_Media_Album();
-				$album->add_album('Wall Posts');
-				$post_id = $album->get_id();
-			}
-		}
+
+		$post_id = $this->check_and_create_album($album_id,$group);
+
 		$file = wp_handle_upload($_FILES['bp_media_file']);
 		if (isset($file['error']) || $file === null) {
 			throw new Exception(__('Error Uploading File', 'bp-media'));
@@ -214,34 +184,15 @@ class BP_Media_Host_Wordpress {
 		$this->type = $type;
 		$this->owner = get_current_user_id();
 		$this->album_id = $post_id;
-		switch ($this->type) {
-			case 'video' :
-				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . $this->id);
-				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_VIDEOS_EDIT_SLUG . '/' . $this->id);
-				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
-				$this->thumbnail_id = get_post_meta($this->id, 'bp_media_thumbnail',true);
-				break;
-			case 'audio' :
-				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . $this->id);
-				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_AUDIO_EDIT_SLUG . '/' . $this->id);
-				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
-				$this->thumbnail_id = get_post_meta($this->id, 'bp_media_thumbnail',true);
-				break;
-			case 'image' :
-				$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . $this->id);
-				$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_IMAGES_EDIT_SLUG . '/' . $this->id);
-				$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
-				$image_array = image_downsize($this->id, 'bp_media_single_image');
-				$this->thumbnail_id = $this->id;
-				break;
-			default :
-				//return false;
-		}
-		if($group == 0)
+		$this->group_id = $group;
+		$this->set_permalinks();
+		if($group == 0){
 			update_post_meta($attachment_id, 'bp-media-key', get_current_user_id());
-		else
+			bp_update_user_meta(bp_loggedin_user_id(), 'bp_media_count', $bp_media_count);
+		}
+		else{
 			update_post_meta($attachment_id, 'bp-media-key', (-$group));
-		bp_update_user_meta(bp_loggedin_user_id(), 'bp_media_count', $bp_media_count);
+		}
 		do_action('bp_media_after_add_media',$this,$is_multiple);
 	}
 
@@ -306,7 +257,12 @@ class BP_Media_Host_Wordpress {
 	 */
 	function get_media_single_content() {
 		global $bp_media_default_sizes, $bp_media_default_excerpts;
-		$content = '<div class="bp_media_content">';
+		$content = '';
+		if($this->group_id>0){
+
+			$content .= '<div class="bp_media_author">Uploaded by '. bp_core_get_userlink($this->owner).'</div>';
+		}
+		$content .= '<div class="bp_media_content">';
 		switch ($this->type) {
 			case 'video' :
 				if($this->thumbnail_id){
@@ -528,6 +484,36 @@ class BP_Media_Host_Wordpress {
 		return $result;
 	}
 
+        /**
+         * Updates activity content's title and description sync with the editing of Media
+	 *
+	 */
+        function update_media_activity(){
+            global $wpdb, $bp, $current_user;
+            $q = $wpdb->prepare( "SELECT id FROM {$bp->activity->table_name} WHERE type = %s AND item_id = %d", 'media_upload', $this->id);
+            $activities = $wpdb->get_results($q);
+            if(isset($activities) && count($activities) > 0){
+                    $activities_template = new BP_Activity_Template(array(
+                    'max' => TRUE,
+                    'user_id' => $current_user,
+                    'in' => $activities[0]->id
+                ));
+                foreach ($activities_template->activities as $activity){
+                        $args = array(
+                                'content' => $this->get_media_activity_content(),
+                                'id' => $activity->id,
+                                'type' => 'media_upload',
+                                'action' => apply_filters( 'bp_media_added_media', sprintf( __( '%1$s added a %2$s', 'bp-media'), bp_core_get_userlink( $this->get_author() ), '<a href="' . $this->get_url() . '">' . $this->get_media_activity_type() . '</a>' ) ),
+                                'primary_link' => $this->get_url(),
+                                'item_id' => $this->get_id(),
+                                'recorded_time' => $activity->date_recorded,
+                                'user_id' => $this->get_author()
+                        );
+                    $activity_id = bp_media_record_activity($args);
+                }
+            }
+        }
+
 	/**
 	 * Deletes the Media Entry
 	 */
@@ -661,5 +647,101 @@ class BP_Media_Host_Wordpress {
 	function get_type(){
 		return $this->type;
 	}
-}
-?>
+
+	/**
+	 * Returns the group id of the media, 0 if it does not belong to a group
+	 */
+	function get_group_id(){
+		return $this->group_id;
+	}
+
+	/**
+	 * Sets the permalinks of the media depending upon whether its in member directory
+	 * or group and acording to the media type
+	 */
+	protected function set_permalinks(){
+		if($this->group_id>0){
+			$current_group = new BP_Groups_Group($this->group_id);
+			$pre_url = bp_get_group_permalink($current_group);
+		}
+		else{
+			$pre_url = bp_core_get_user_domain($this->owner);
+		}
+		switch ($this->type) {
+			case 'video' :
+				$this->url = trailingslashit( $pre_url . BP_MEDIA_VIDEOS_SLUG . '/' . $this->id);
+				$this->edit_url = trailingslashit( $pre_url . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_VIDEOS_EDIT_SLUG . '/' . $this->id);
+				$this->delete_url = trailingslashit( $pre_url . BP_MEDIA_VIDEOS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
+				$this->thumbnail_id = get_post_meta($this->id, 'bp_media_thumbnail',true);
+				break;
+			case 'audio' :
+				$this->url = trailingslashit( $pre_url . BP_MEDIA_AUDIO_SLUG . '/' . $this->id);
+				$this->edit_url = trailingslashit( $pre_url . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_AUDIO_EDIT_SLUG . '/' . $this->id);
+				$this->delete_url = trailingslashit( $pre_url . BP_MEDIA_AUDIO_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
+				$this->thumbnail_id = get_post_meta($this->id, 'bp_media_thumbnail',true);
+				break;
+			case 'image' :
+				$this->url = trailingslashit( $pre_url . BP_MEDIA_IMAGES_SLUG . '/' . $this->id);
+				$this->edit_url = trailingslashit( $pre_url . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_IMAGES_EDIT_SLUG . '/' . $this->id);
+				$this->delete_url = trailingslashit( $pre_url . BP_MEDIA_IMAGES_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
+				$image_array = image_downsize($this->id, 'bp_media_single_image');
+				$this->thumbnail_id = $this->id;
+				break;
+			default :
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Checks if the album given exists if not, creates a new one according to context
+	 */
+	function check_and_create_album($album_id,$group){
+		global $wpdb;
+		$create_new_album_flag = false;
+		if($album_id!=0){
+			$album = get_post($album_id);
+			if($album->post_author!=  get_current_user_id() && $group == 0){
+				$create_new_album_flag = true;
+			}
+			else{
+				$post_id = $album->ID;
+			}
+		}
+		else{
+			$create_new_album_flag = true;
+		}
+		if($create_new_album_flag){
+			if($group == 0){
+				$post_id = $wpdb->get_var(
+						"SELECT ID
+						FROM $wpdb->posts
+						WHERE
+							post_title = 'Wall Posts'
+							AND post_author = '".  get_current_user_id()."'
+							AND post_type='bp_media_album'"
+						);
+			}
+			else{
+				$post_id = $wpdb->get_var(
+						"SELECT wp_posts.ID
+						FROM $wpdb->posts
+						INNER JOIN $wpdb->postmeta ON $wpdb->posts.ID = $wpdb->postmeta.post_id
+							AND $wpdb->postmeta.meta_key =  'bp-media-key'
+							AND $wpdb->postmeta.meta_value = -$group
+							AND $wpdb->posts.post_title =  'Wall Posts'" );
+			}
+			if($post_id==null){
+				$album = new BP_Media_Album();
+				if($group == 0 )
+					$album->add_album('Wall Posts',  get_current_user_id(), $group);
+				else{
+					$current_user = wp_get_current_user();
+					$album->add_album($current_user->display_name.'\'s Album',  get_current_user_id(), $group);
+				}
+				$post_id = $album->get_id();
+			}
+		}
+		return $post_id;
+	}
+} ?>

@@ -9,7 +9,8 @@ class BP_Media_Album{
 		$delete_url,
 		$thumbnail,
 		$edit_url,
-		$media_entries;
+		$media_entries,
+		$group_id;
 
 	/**
 	 * Constructs a new BP_Media_Album
@@ -43,13 +44,51 @@ class BP_Media_Album{
 		$this->description = $album->post_content;
 		$this->name = $album->post_title;
 		$this->owner = $album->post_author;
-		$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_ALBUMS_SLUG . '/' . $this->id);
-		$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_ALBUMS_EDIT_SLUG . '/' . $this->id);
-		$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
-		if(has_post_thumbnail($this->id)){
-			$this->thumbnail = get_the_post_thumbnail($this->id, 'thumbnail');
+		$meta_key = get_post_meta($this->id, 'bp-media-key', true);
+		/**
+		 * We use bp-media-key to distinguish if the entry belongs to a group or not
+		 * if the value is less than 0 it means it the group id to which the media belongs
+		 * and if its greater than 0 then it means its the author id of the uploader
+		 * But for use in the class, we use group_id as positive integer even though
+		 * we use it as negative value in the bp-media-key meta key
+		 */
+		$this->group_id = $meta_key<0?-$meta_key:0;
+		if($this->group_id>0){
+			$current_group = new BP_Groups_Group($this->group_id);
+			$group_url = bp_get_group_permalink($current_group);
+			$this->url = trailingslashit($group_url . BP_MEDIA_ALBUMS_SLUG . '/' . $this->id);
+			$this->edit_url = trailingslashit($group_url . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_ALBUMS_EDIT_SLUG . '/' . $this->id);
+			$this->delete_url = trailingslashit($group_url . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
 		}
 		else{
+			$this->url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_ALBUMS_SLUG . '/' . $this->id);
+			$this->edit_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_ALBUMS_EDIT_SLUG . '/' . $this->id);
+			$this->delete_url = trailingslashit(bp_core_get_user_domain($this->owner) . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
+		}
+		$attachments = get_children(array(
+			'numberposts' => 1,
+			'order'=> 'DESC',
+			'post_mime_type' => 'image',
+			'post_parent' => $this->id,
+			'post_type'	=>	'attachment'
+		));
+		$attachments_featured = get_children(array(
+			'numberposts' => 1,
+			'meta_key' => 'featured',
+			'orderby' => 'meta_value',
+			'post_mime_type' => 'image',
+			'post_parent' => $this->id,
+			'post_type'	=>	'attachment',
+		));
+		if($attachments_featured) {
+                        foreach($attachments_featured as $attachment) {
+                                $this->thumbnail = '<span><img src="'.wp_get_attachment_thumb_url( $attachment->ID ).'"></span>';
+                        }
+                }elseif ($attachments) {
+                        foreach($attachments as $attachment) {
+                                $this->thumbnail = '<span><img src="'.wp_get_attachment_thumb_url( $attachment->ID ).'"></span>';
+                        }
+                }else{
 			$this->thumbnail = '<img src = '.plugins_url('img/image_thumb.png', __FILE__) .' />';
 		}
 		$this->media_entries = get_children(array(
@@ -198,6 +237,13 @@ class BP_Media_Album{
 	 */
 	function get_owner(){
 		return $this->owner;
+	}
+
+	/**
+	 * Returns the group id to which the media belongs, 0 if it does not belong to any group
+	 */
+	function get_group_id(){
+		return $this->group_id;
 	}
 }
 ?>
