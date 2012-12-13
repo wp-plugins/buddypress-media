@@ -35,12 +35,13 @@ jQuery(document).ready(function(){
 								}
 								var data = {
 									action: 'bp_media_add_album',
-									bp_media_album_name : album_name
+									bp_media_album_name : album_name,
+									bp_media_group_id : bp_media_uploader_params.multipart_params.bp_media_group_id
 								};
 								jQuery.post(bp_media_vars.ajaxurl,data,function(response){
 									var album = parseInt(response);
 									if(album == 0){
-										alert('There was some error creating album');
+										alert('Sorry you cannot create albums in this group');
 									}
 									else{
 										jQuery('#bp-media-selected-album').append('<option value='+album+' selected="selected">'+jQuery('#bp_media_album_name').val()+'</option>')

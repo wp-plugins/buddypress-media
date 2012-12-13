@@ -115,6 +115,7 @@ function bp_media_update_count() {
 function bp_media_update_media(){
 	global $bp_media_current_entry;
 	if($bp_media_current_entry->update_media(array('description'=> esc_html($_POST['bp_media_description']),'name'=>esc_html($_POST['bp_media_title'])))){
+                $bp_media_current_entry->update_media_activity();
 		@setcookie('bp-message', 'The media has been updated' , time() + 60 * 60 * 24, COOKIEPATH);
 		@setcookie('bp-message-type', 'success' , time() + 60 * 60 * 24, COOKIEPATH);
 		wp_redirect($bp_media_current_entry->get_url());
@@ -232,5 +233,33 @@ function bp_media_update_album_activity($album,$current_time = true,$delete_medi
 function bp_media_wp_comment_form_mod() {
 	global $bp_media_current_entry;
 	echo '<input type="hidden" name="redirect_to" value="'.$bp_media_current_entry->get_url().'">' ;
+}
+
+function implement_featured_ajax() {
+    if(isset($_POST['post_id'])) {
+        if(isset($_POST['post_date']) && $_POST['remove_featured'] == 0){
+            update_post_meta($_POST['post_id'], 'featured', date('Y-m-d H:i:s', strtotime($_POST['post_date'])) );
+        } else {
+            update_post_meta($_POST['post_id'], 'featured', FALSE);
+        }
+         die(1);
+    }
+}
+add_action('wp_ajax_my_featured_action', 'implement_featured_ajax');
+add_action('wp_ajax_nopriv_my_featured_action', 'implement_featured_ajax');
+
+/**
+ * Redirects the user to the location given in the parameter as well as set the message
+ * and context of redirect
+ *
+ * @param $location String The URL to redirect to
+ * @param $message String The message to show on the page where redirected
+ * @param $type String Type of message(updated, success, error, warning), works only if message is set
+ * @param $status String The HTTP status header for the redirection page.
+ */
+function bp_media_redirect($location,$message = '',$type='updated',$status='302'){
+	if($message!='')
+		bp_core_add_message( $message, 'error' );
+	bp_core_redirect($location, $status);
 }
 ?>
