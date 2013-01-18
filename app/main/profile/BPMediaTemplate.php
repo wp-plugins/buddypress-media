@@ -1,13 +1,12 @@
 <?php
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 /**
- * Description of BPMediaTemplate
+ * Contains methods for template functions
  *
- * @author saurabh
+ * @package BuddyPressMedia
+ * @subpackage Profile
+ *
+ * @author Saurabh Shukla <saurabh.shukla@rtcamp.com>
+ * @author Gagandeep Singh <gagandeep.singh@rtcamp.com>
  */
 class BPMediaTemplate {
 
@@ -159,7 +158,7 @@ class BPMediaTemplate {
 				break;
 			case 'albums':
 				global $bp_media_albums_query;
-				if ( isset( $bp_media_query->found_posts ) && $bp_media_query->found_posts > 10 )
+				if ( isset( $bp_media_albums_query->found_posts ) && $bp_media_albums_query->found_posts > 10 )
 					$showmore = true;
 				break;
 		}
