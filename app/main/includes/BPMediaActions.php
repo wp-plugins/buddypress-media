@@ -45,7 +45,7 @@ class BPMediaActions {
             /** This section can help in the group activity handling */
             if (isset($_POST['bp_media_group_id']) && intval($_POST['bp_media_group_id'])) {
                 remove_action('bp_media_after_add_media', 'BPMediaActions::activity_create_after_add_media', 10, 2);
-                add_action('bp_media_after_add_media', 'BPMediaGroupAction::groups_activity_create_after_add_media', 10, 2);
+                add_action('bp_media_after_add_media', 'BPMediaGroupAction::bp_media_groups_activity_create_after_add_media', 10, 2);
                 add_filter('bp_media_force_hide_activity', 'BPMediaGroupAction::bp_media_groups_force_hide_activity');
             }
             /* @var $bp_media_entry BPMediaHostWordpress */
@@ -561,9 +561,11 @@ class BPMediaActions {
                     return false;
                 }
             }
+			$activity_content = $media->get_media_activity_content();
+			new BPMediaLog($activity_content);
             $args = array(
                 'action' => apply_filters('bp_media_added_media', sprintf(__('%1$s added a %2$s', BP_MEDIA_TXT_DOMAIN), bp_core_get_userlink($media->get_author()), '<a href="' . $media->get_url() . '">' . $media->get_media_activity_type() . '</a>')),
-                'content' => $media->get_media_activity_content(),
+                'content' => $activity_content,
                 'primary_link' => $media->get_url(),
                 'item_id' => $media->get_id(),
                 'type' => 'media_upload',
