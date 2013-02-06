@@ -59,8 +59,12 @@ class BPMediaHostWordpress {
          * But for use in the class, we use group_id as positive integer even though
          * we use it as negative value in the bp-media-key meta key
          */
+
         $this->group_id = $meta_key < 0 ? -$meta_key : 0;
-        preg_match_all('/audio|video|image/i', $media->post_mime_type, $result);
+        if ( !'bp_media_album' == $media->post_type || !empty($media->post_mime_type) )
+            preg_match_all('/audio|video|image/i', $media->post_mime_type, $result);
+        else
+            $result[0][0] = 'album';
         if (isset($result[0][0]))
             $this->type = $result[0][0];
         else
@@ -228,7 +232,7 @@ class BPMediaHostWordpress {
                 return false;
         }
         $activity_content .= '</div>';
-        $activity_content .= '<div class="bp_media_description">' . __(wp_html_excerpt($this->description, $bp_media_default_excerpts['activity_entry_description']), BP_MEDIA_TXT_DOMAIN) . '</div>';
+        $activity_content .= '<div class="bp_media_description">' . wp_html_excerpt($this->description, $bp_media_default_excerpts['activity_entry_description']). '</div>';
         return $activity_content;
     }
 
@@ -286,7 +290,7 @@ class BPMediaHostWordpress {
                 return false;
         }
         $content .= '</div>';
-        $content .= '<div class="bp_media_description">' . __(wp_html_excerpt($this->description, $bp_media_default_excerpts['single_entry_description']), BP_MEDIA_TXT_DOMAIN) . '</div>';
+        $content .= '<div class="bp_media_description">' .wp_html_excerpt($this->description, $bp_media_default_excerpts['single_entry_description']) . '</div>';
         return $content;
     }
 
@@ -295,7 +299,7 @@ class BPMediaHostWordpress {
      */
     function get_media_single_title() {
         global $bp_media_default_excerpts, $bp_media;
-        $content = '<div class="bp_media_title">' . __(wp_html_excerpt($this->name, $bp_media_default_excerpts['single_entry_title']), BP_MEDIA_TXT_DOMAIN) . '</div>';
+        $content = '<div class="bp_media_title">' . wp_html_excerpt($this->name, $bp_media_default_excerpts['single_entry_title']) . '</div>';
         return $content;
     }
 
@@ -697,6 +701,12 @@ class BPMediaHostWordpress {
                 $image_array = image_downsize($this->id, 'bp_media_single_image');
                 $this->thumbnail_id = $this->id;
                 break;
+            case 'album' :
+                $this->url = trailingslashit($pre_url . BP_MEDIA_ALBUMS_SLUG . '/' . $this->id);
+                $this->edit_url = trailingslashit($pre_url . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_ALBUMS_EDIT_SLUG . '/' . $this->id);
+                $this->delete_url = trailingslashit($pre_url . BP_MEDIA_ALBUMS_SLUG . '/' . BP_MEDIA_DELETE_SLUG . '/' . $this->id);
+//                $this->thumbnail_id = get_post_meta($this->id, 'bp_media_thumbnail', true);
+                break;
             default :
                 return false;
         }
@@ -708,6 +718,7 @@ class BPMediaHostWordpress {
      */
     function check_and_create_album($album_id, $group) {
         global $wpdb;
+        $post_wall=__( 'Wall Posts', BP_MEDIA_TXT_DOMAIN );
         $create_new_album_flag = false;
         if ($album_id != 0) {
             $album = get_post($album_id);
@@ -725,7 +736,7 @@ class BPMediaHostWordpress {
                         "SELECT ID
 						FROM $wpdb->posts
 						WHERE
-							post_title = 'Wall Posts'
+							post_title = $post_wall
 							AND post_author = '" . get_current_user_id() . "'
 							AND post_type='bp_media_album'"
                 );
@@ -736,12 +747,12 @@ class BPMediaHostWordpress {
 						INNER JOIN $wpdb->postmeta ON $wpdb->posts.ID = $wpdb->postmeta.post_id
 							AND $wpdb->postmeta.meta_key =  'bp-media-key'
 							AND $wpdb->postmeta.meta_value = -$group
-							AND $wpdb->posts.post_title =  'Wall Posts'");
+							AND $wpdb->posts.post_title = $post_wall");
             }
             if ($post_id == null) {
                 $album = new BPMediaAlbum();
                 if ($group == 0)
-                    $album->add_album('Wall Posts', get_current_user_id(), $group);
+                    $album->add_album($post_wall, get_current_user_id(), $group);
                 else {
                     $current_user = wp_get_current_user();
                     $album->add_album($current_user->display_name . '\'s Album', get_current_user_id(), $group);

@@ -106,39 +106,34 @@ class BPMediaComponent extends BP_Component {
 				break;
 		}
 
-		if ( bp_is_my_profile() ) {
+
+
+                // -------------- Removed Upload as default tab ------------- //
+//		if ( bp_is_my_profile() ) {
+//			$main_nav = array(
+//				'name' => BP_MEDIA_LABEL,
+//				'slug' => BP_MEDIA_SLUG,
+//				'position' => 80,
+//				'screen_function' => array( $bp_media_upload, 'upload_screen' ),
+//				'default_subnav_slug' => BP_MEDIA_UPLOAD_SLUG
+//			);
+//		} else {
 			$main_nav = array(
-				'name' => BP_MEDIA_LABEL,
-				'slug' => BP_MEDIA_SLUG,
-				'position' => 80,
-				'screen_function' => array( $bp_media_upload, 'upload_screen' ),
-				'default_subnav_slug' => BP_MEDIA_UPLOAD_SLUG
-			);
-		} else {
-			$main_nav = array(
-				'name' => BP_MEDIA_LABEL,
+				'name' => __(BP_MEDIA_LABEL,BP_MEDIA_TXT_DOMAIN),
 				'slug' => BP_MEDIA_SLUG,
 				'position' => 80,
 				'screen_function' => array( $bp_media_image, 'screen' ),
 				'default_subnav_slug' => BP_MEDIA_IMAGES_SLUG
 			);
-		}
-		$sub_nav[ ] = array(
-			'name' => BP_MEDIA_UPLOAD_LABEL,
-			'slug' => BP_MEDIA_UPLOAD_SLUG,
-			'parent_url' => trailingslashit( bp_loggedin_user_domain() . BP_MEDIA_SLUG ),
-			'parent_slug' => BP_MEDIA_SLUG,
-			'screen_function' => array( $bp_media_upload, 'upload_screen' ),
-			'position' => 10,
-			'user_has_access' => bp_is_my_profile()
-		);
-		parent::setup_nav( $main_nav, $sub_nav );
-
-		bp_core_new_nav_item( array(
-			'name' => BP_MEDIA_IMAGES_LABEL,
+//		}
+		$sub_nav[ ] = array();
+                parent::setup_nav( $main_nav, $sub_nav );
+                bp_core_new_nav_item( array(
+			'name' => __(BP_MEDIA_IMAGES_LABEL,BP_MEDIA_TXT_DOMAIN),
 			'slug' => BP_MEDIA_IMAGES_SLUG,
 			'screen_function' => array( $bp_media_image, 'screen' ),
 		) );
+
 
 		bp_core_new_subnav_item( array(
 			'name' => 'View', /* Display name for the nav item(It won't be shown anywhere) */
@@ -178,7 +173,7 @@ class BPMediaComponent extends BP_Component {
 
 
 		bp_core_new_nav_item( array(
-			'name' => BP_MEDIA_VIDEOS_LABEL,
+			'name' => __(BP_MEDIA_VIDEOS_LABEL,BP_MEDIA_TXT_DOMAIN),
 			'slug' => BP_MEDIA_VIDEOS_SLUG,
 			'screen_function' => array( $bp_media_video, 'screen' )
 		) );
@@ -221,7 +216,7 @@ class BPMediaComponent extends BP_Component {
 
 
 		bp_core_new_nav_item( array(
-			'name' => BP_MEDIA_AUDIO_LABEL,
+			'name' => __(BP_MEDIA_AUDIO_LABEL,BP_MEDIA_TXT_DOMAIN),
 			'slug' => BP_MEDIA_AUDIO_SLUG,
 			'screen_function' => array( $bp_media_audio, 'screen' )
 		) );
@@ -264,7 +259,7 @@ class BPMediaComponent extends BP_Component {
 
 
 		bp_core_new_nav_item( array(
-			'name' => BP_MEDIA_ALBUMS_LABEL,
+			'name' => __(BP_MEDIA_ALBUMS_LABEL,BP_MEDIA_TXT_DOMAIN),
 			'slug' => BP_MEDIA_ALBUMS_SLUG,
 			'screen_function' => array( $bp_media_album, 'screen' ),
 		) );
@@ -303,6 +298,12 @@ class BPMediaComponent extends BP_Component {
 			'parent_url' => trailingslashit( bp_loggedin_user_domain() . BP_MEDIA_ALBUMS_SLUG ), /* URL of the parent item */
 			'position' => 90, /* Index of where this nav item should be positioned */
 			'screen_function' => array( $bp_media_album, 'screen' ), /* The name of the function to run when clicked */
+		) );
+                bp_core_new_nav_item( array(
+			'name' => __(BP_MEDIA_UPLOAD_LABEL,BP_MEDIA_TXT_DOMAIN),
+			'slug' => BP_MEDIA_UPLOAD_SLUG,
+			'screen_function' => array( $bp_media_upload, 'upload_screen' ),
+                        'user_has_access' => bp_is_my_profile()
 		) );
 	}
 
