@@ -25,7 +25,21 @@ if (!class_exists('BPMediaSettings')) {
          */
         public function settings() {
             global $bp_media_addon;
-            add_settings_section('bpm-settings', __('BuddyPress Media Settings', BP_MEDIA_TXT_DOMAIN), is_multisite() ? array($this, 'network_notices') : '', 'bp-media-settings');
+            add_settings_section('bpm-media-type', __('Enable BuddyPress Media on', BP_MEDIA_TXT_DOMAIN), '', 'bp-media-settings');
+//            add_settings_field('bpm-admin-profile', __('User profiles', BP_MEDIA_TXT_DOMAIN), array($this, 'checkbox'), 'bp-media-settings', 'bpm-media-type', array(
+//                'setting' => 'bp_media_options',
+//                'option' => 'enable_on_profile',
+//                'desc' => __('Check to enable BuddyPress Media on User profiles', BP_MEDIA_TXT_DOMAIN)
+//                    )
+//            );
+            add_settings_field('bpm-admin-group', __('Groups', BP_MEDIA_TXT_DOMAIN), array($this, 'checkbox'), 'bp-media-settings', 'bpm-media-type', array(
+                'setting' => 'bp_media_options',
+                'option' => 'enable_on_group',
+                'desc' => __('Check to enable BuddyPress Media in Groups', BP_MEDIA_TXT_DOMAIN)
+                    )
+            );
+
+            add_settings_section('bpm-settings', __('Enable Media Types on', BP_MEDIA_TXT_DOMAIN), is_multisite() ? array($this, 'network_notices') : '', 'bp-media-settings');
             add_settings_field('bpm-video', __('Video', BP_MEDIA_TXT_DOMAIN), array($this, 'checkbox'), 'bp-media-settings', 'bpm-settings', array(
                 'setting' => 'bp_media_options',
                 'option' => 'videos_enabled',
@@ -41,33 +55,24 @@ if (!class_exists('BPMediaSettings')) {
                 'option' => 'images_enabled',
                 'desc' => __('Check to enable images upload functionality', BP_MEDIA_TXT_DOMAIN)
             ));
-            add_settings_field('bpm-download', __('Download', BP_MEDIA_TXT_DOMAIN), array($this, 'checkbox'), 'bp-media-settings', 'bpm-settings', array(
+
+            add_settings_section('bpm-miscellaneous', __('Miscellaneous Settings', BP_MEDIA_TXT_DOMAIN), '', 'bp-media-settings');
+            add_settings_field('bpm-download', __('Download', BP_MEDIA_TXT_DOMAIN), array($this, 'checkbox'), 'bp-media-settings', 'bpm-miscellaneous', array(
                 'setting' => 'bp_media_options',
                 'option' => 'download_enabled',
                 'desc' => __('Check to enable download functionality', BP_MEDIA_TXT_DOMAIN)
             ));
-			add_settings_field('bpm-admin-bar-menu', __('Admin bar menu', BP_MEDIA_TXT_DOMAIN), array($this, 'checkbox'), 'bp-media-settings', 'bpm-settings', array(
+            add_settings_field('bpm-admin-bar-menu', __('Admin bar menu', BP_MEDIA_TXT_DOMAIN), array($this, 'checkbox'), 'bp-media-settings', 'bpm-miscellaneous', array(
                 'setting' => 'bp_media_options',
                 'option' => 'show_admin_menu',
                 'desc' => __('Check to enable menu in WordPress admin bar', BP_MEDIA_TXT_DOMAIN)
-				)
+                    )
             );
-            add_settings_section('bpm-spread-the-word', __('Spread the Word', BP_MEDIA_TXT_DOMAIN), '', 'bp-media-settings');
-            add_settings_field('bpm-spread-the-word-settings', __('Spread the Word', BP_MEDIA_TXT_DOMAIN), array($this, 'radio'), 'bp-media-settings', 'bpm-spread-the-word', array(
-                'setting' => 'bp_media_options',
-                'option' => 'remove_linkback',
-                'radios' => array(
-                    2 => __('Yes, I support BuddyPress Media', BP_MEDIA_TXT_DOMAIN),
-                    1 => __('No, I don\'t want to support BuddyPress Media', BP_MEDIA_TXT_DOMAIN)),
-                'default' => 2)
-            );
-            add_settings_section('bpm-other', __('BuddyPress Media Other Options', BP_MEDIA_TXT_DOMAIN), '', 'bp-media-settings');
-            add_settings_field('bpm-other-settings', __('Re-Count Media Entries', BP_MEDIA_TXT_DOMAIN), array($this, 'button'), 'bp-media-settings', 'bpm-other', array(
+            add_settings_field('bpm-other-settings', __('Re-Count Media Entries', BP_MEDIA_TXT_DOMAIN), array($this, 'button'), 'bp-media-settings', 'bpm-miscellaneous', array(
                 'option' => 'refresh-count',
                 'name' => __('Re-Count', BP_MEDIA_TXT_DOMAIN),
                 'desc' => __('It will re-count all media entries of all users and correct any discrepancies.', BP_MEDIA_TXT_DOMAIN)
             ));
-
 
             $bp_media_addon = new BPMediaAddon();
             add_settings_section('bpm-addons', __('BuddyPress Media Addons for Audio/Video Conversion', BP_MEDIA_TXT_DOMAIN), array($bp_media_addon, 'get_addons'), 'bp-media-addons');
@@ -82,13 +87,29 @@ if (!class_exists('BPMediaSettings')) {
         }
 
         public function network_notices() {
+            $flag = 1;
+            if (get_site_option('bpm-media-enable', false)) {
+                echo '<div id="setting-error-bpm-media-enable" class="error"><p><strong>' . get_site_option('bpm-media-enable') . '</strong></p></div>';
+                delete_site_option('bpm-media-enable');
+                $flag = 0;
+            }
+            if (get_site_option('bpm-media-type', false)) {
+                echo '<div id="setting-error-bpm-media-type" class="error"><p><strong>' . get_site_option('bpm-media-type') . '</strong></p></div>';
+                delete_site_option('bpm-media-type');
+                $flag = 0;
+            }
+
             if (get_site_option('bpm-recount-success', false)) {
                 echo '<div id="setting-error-bpm-recount-success" class="updated"><p><strong>' . get_site_option('bpm-recount-success') . '</strong></p></div>';
                 delete_site_option('bpm-recount-success');
+                $flag = 0;
             } elseif (get_site_option('bpm-recount-fail', false)) {
                 echo '<div id="setting-error-bpm-recount-fail" class="error"><p><strong>' . get_site_option('bpm-recount-fail') . '</strong></p></div>';
                 delete_site_option('bpm-recount-fail');
-            } elseif (get_site_option('bpm-settings-saved')) {
+                $flag = 0;
+            }
+
+            if (get_site_option('bpm-settings-saved') && $flag) {
                 echo '<div id="setting-error-bpm-settings-saved" class="updated"><p><strong>' . get_site_option('bpm-settings-saved') . '</strong></p></div>';
             }
             delete_site_option('bpm-settings-saved');
@@ -118,6 +139,20 @@ if (!class_exists('BPMediaSettings')) {
                     else
                         add_settings_error(__('Recount Fail', BP_MEDIA_TXT_DOMAIN), 'bpm-recount-fail', __('Recounting Failed', BP_MEDIA_TXT_DOMAIN));
                 }
+            }
+            if (!isset($_POST['bp_media_options']['enable_on_profile']) && !isset($_POST['bp_media_options']['enable_on_group'])) {
+                if (is_multisite())
+                    update_site_option('bpm-media-enable', __('Enable BuddyPress Media on either User Profiles or Groups or both. Atleast one should be selected.', BP_MEDIA_TXT_DOMAIN));
+                else
+                    add_settings_error(__('Enable BuddyPress Media', BP_MEDIA_TXT_DOMAIN), 'bpm-media-enable', __('Enable BuddyPress Media on either User Profiles or Groups or both. Atleast one should be selected.', BP_MEDIA_TXT_DOMAIN));
+                $input['enable_on_profile'] = 1;
+            }
+            if (!isset($_POST['bp_media_options']['videos_enabled']) && !isset($_POST['bp_media_options']['audio_enabled']) && !isset($_POST['bp_media_options']['images_enabled'])) {
+                if (is_multisite())
+                    update_site_option('bpm-media-type', __('Atleast one Media Type Must be selected', BP_MEDIA_TXT_DOMAIN));
+                else
+                    add_settings_error(__('Media Type', BP_MEDIA_TXT_DOMAIN), 'bpm-media-type', __('Atleast one Media Type Must be selected', BP_MEDIA_TXT_DOMAIN));
+                $input['images_enabled'] = 1;
             }
             if (is_multisite())
                 update_site_option('bpm-settings-saved', __('Settings saved.', BP_MEDIA_FFMPEG_TXT_DOMAIN));
@@ -164,7 +199,7 @@ if (!class_exists('BPMediaSettings')) {
             ?>
             <label for="<?php echo $option; ?>">
                 <input<?php checked($options[$option]); ?> name="<?php echo $name; ?>" id="<?php echo $option; ?>" value="1" type="checkbox" />
-            <?php echo $desc; ?>
+                <?php echo $desc; ?>
             </label><?php
         }
 
@@ -211,7 +246,7 @@ if (!class_exists('BPMediaSettings')) {
             }
 
             foreach ($radios as $value => $desc) {
-                ?>
+                    ?>
                 <label for="<?php echo sanitize_title($desc); ?>"><input<?php checked($options[$option], $value); ?> value="<?php echo $value; ?>" name="<?php echo $name; ?>" id="<?php echo sanitize_title($desc); ?>" type="radio" /><?php echo $desc; ?></label><br /><?php
             }
         }
@@ -254,12 +289,12 @@ if (!class_exists('BPMediaSettings')) {
             if ((isset($options[$option]) && empty($options[$option])) || !isset($options[$option])) {
                 $options[$option] = '';
             }
-            ?>
+                ?>
             <label for="<?php echo sanitize_title($option); ?>"><input value="<?php echo $options[$option]; ?>" name="<?php echo $name; ?>" id="<?php echo sanitize_title($option); ?>" type="<?php echo $password ? 'password' : 'text'; ?>" /><?php
             if (!empty($desc)) {
                 echo '<br /><span class="description">' . $desc . '</span>';
             }
-            ?></label><br /><?php
+                ?></label><br /><?php
         }
 
         /**
@@ -300,14 +335,14 @@ if (!class_exists('BPMediaSettings')) {
             if ((isset($options[$option]) && empty($options[$option])) || !isset($options[$option])) {
                 $options[$option] = '';
             }
-            ?>
+                ?>
             <select name="<?php echo $name; ?>" id="<?php echo $option; ?>"><?php if ($none) { ?>
                     <option><?php __e('None', BP_MEDIA_TXT_DOMAIN); ?></option><?php
             }
             foreach ($values as $value => $text) {
-                ?>
+                    ?>
                     <option<?php selected($options[$option], $value); ?> value="<?php echo $value; ?>"><?php echo $text; ?></option><?php }
-            ?>
+                ?>
             </select><?php
         }
 
@@ -342,7 +377,7 @@ if (!class_exists('BPMediaSettings')) {
                 $button = $option;
             submit_button($name, '', $button, false);
             if (!empty($desc)) {
-                ?>
+                    ?>
                 <span class="description"><?php echo $desc; ?></a><?php
             }
         }
@@ -350,4 +385,4 @@ if (!class_exists('BPMediaSettings')) {
     }
 
 }
-?>
+    ?>

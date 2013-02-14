@@ -8,12 +8,14 @@
  *
  * @author Saurabh Shukla <saurabh.shukla@rtcamp.com>
  * @author Gagandeep Singh <gagandeep.singh@rtcamp.com>
- * 
+ *
  */
 class BPMediaAlbumScreen extends BPMediaScreen {
 
+	var $filters;
+
     /**
-     * 
+     *
      * @param type $media_type
      * @param type $slug
      */
@@ -22,7 +24,7 @@ class BPMediaAlbumScreen extends BPMediaScreen {
     }
 
     /**
-     * 
+     *
      * @global type $bp
      */
     function screen() {
@@ -54,12 +56,12 @@ class BPMediaAlbumScreen extends BPMediaScreen {
     }
 
     /**
-     * 
+     *
      * @global type $bp_media_albums_query
      */
 
     /**
-     * 
+     *
      * @global type $bp_media_albums_query
      */
     function screen_content() {
@@ -81,7 +83,7 @@ class BPMediaAlbumScreen extends BPMediaScreen {
     }
 
     /**
-     * 
+     *
      * @global type $bp
      * @global BPMediaAlbum $bp_media_current_album
      * @return boolean
@@ -102,7 +104,7 @@ class BPMediaAlbumScreen extends BPMediaScreen {
     }
 
     /**
-     * 
+     *
      * @global type $bp
      * @global BPMediaAlbum $bp_media_current_album
      * @global type $bp_media_query
@@ -119,24 +121,28 @@ class BPMediaAlbumScreen extends BPMediaScreen {
             echo '<a href="' . $bp_media_current_album->get_delete_url() . '" class="button item-button bp-secondary-action delete-activity-single confirm" rel="nofollow">' . __("Delete", BP_MEDIA_TXT_DOMAIN) . '</a>';
             echo '</div>';
         }
-
+        $total_post = 10;
+        $total_post = get_option('posts_per_page');
+        
         $this->inner_query($bp_media_current_album->get_id());
         $this->hook_before();
         if ($bp_media_current_album && $bp_media_query->have_posts()):
-            echo '<ul id="bp-media-list" class="bp-media-gallery item-list">';
-            if (bp_is_my_profile() || BPMediaGroup::can_upload()) {
+            echo '<ul id="bp-media-list" class="bp-media-gallery albums item-list">';
+            if (bp_is_my_profile() || BPMediaGroupLoader::can_upload()) {
                 echo '<li>';
                 BPMediaUploadScreen::upload_screen_content();
                 echo '</li>';
+                $total_post--;
             }
-            while ($bp_media_query->have_posts()) : $bp_media_query->the_post();
+            while ($bp_media_query->have_posts() && $total_post>0) : $bp_media_query->the_post();
                 $this->template->the_content();
+                $total_post--;
             endwhile;
             echo '</ul>';
             $this->template->show_more();
         else:
             BPMediaFunction::show_formatted_error_message(__('Sorry, no media items were found in this album.', BP_MEDIA_TXT_DOMAIN), 'info');
-            if (bp_is_my_profile() || BPMediaGroup::can_upload()) {
+            if (bp_is_my_profile() || BPMediaGroupLoader::can_upload()) {
                 echo '<div class="bp-media-area-allocate"></div>';
                 BPMediaUploadScreen::upload_screen_content();
             }
@@ -145,7 +151,7 @@ class BPMediaAlbumScreen extends BPMediaScreen {
     }
 
     /**
-     * 
+     *
      * @global type $bp
      * @global type $bp_media_albums_query
      */
@@ -169,8 +175,10 @@ class BPMediaAlbumScreen extends BPMediaScreen {
         }
     }
 
+
+
     /**
-     * 
+     *
      * @param type $action
      */
     function template_actions($action) {
@@ -178,7 +186,7 @@ class BPMediaAlbumScreen extends BPMediaScreen {
     }
 
     /**
-     * 
+     *
      * @global type $bp
      * @global type $bp_media_query
      * @param type $album_id
@@ -195,14 +203,32 @@ class BPMediaAlbumScreen extends BPMediaScreen {
         }
         if (!$paged)
             $paged = 1;
+		$this->filter_entries();
         $args = array(
             'post_type' => 'attachment',
             'post_status' => 'any',
             'post_parent' => $album_id,
-            'paged' => $paged
+            'paged' => $paged,
+			'post_mime_type'=>$this->filters
         );
         $bp_media_query = new WP_Query($args);
     }
+
+	function filter_entries(){
+		global $bp_media;
+		$enabled = $bp_media->enabled();
+		if(isset($enabled['upload'])) unset($enabled['upload']);
+		if(isset($enabled['album'])) unset($enabled['album']);
+		foreach($enabled as $type=>$active){
+			if($active==true){
+				$filters[] = $type;
+			}
+
+		}
+
+		if(count($filters)==1) $filters = $filters[0];
+		$this->filters = $filters;
+	}
 
 }
 
