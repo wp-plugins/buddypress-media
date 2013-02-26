@@ -72,11 +72,15 @@ class BPMediaAlbum {
         }
         if (empty($album->ID))
             throw new Exception(__('Sorry, the requested album does not exist.', BP_MEDIA_TXT_DOMAIN));
-        $this->id = $album->ID;
-        $this->description = $album->post_content;
-        $this->name = $album->post_title;
-        $this->owner = $album->post_author;
-        $meta_key = get_post_meta($this->id, 'bp-media-key', true);
+
+//		$required_access = BPMediaPrivacy::required_access($album_id);
+//		$has_access = BPMediaPrivacy::has_access($album_id);
+
+		global $bp;
+//		$messages = BPMediaPrivacy::get_messages( 'album',$bp->displayed_user->fullname );
+		$this->id = $album->ID;
+
+		$meta_key = get_post_meta($this->id, 'bp-media-key', true);
         /**
          * We use bp-media-key to distinguish if the entry belongs to a group or not
          * if the value is less than 0 it means it the group id to which the media belongs
@@ -84,7 +88,17 @@ class BPMediaAlbum {
          * But for use in the class, we use group_id as positive integer even though
          * we use it as negative value in the bp-media-key meta key
          */
-        $this->group_id = $meta_key < 0 ? -$meta_key : 0;
+
+		$this->group_id = $meta_key < 0 ? -$meta_key : 0;
+//		if($this->group_id<=0){
+//			if(!$has_access){
+//				throw new Exception($messages[$required_access]);
+//			}
+//		}
+
+        $this->description = $album->post_content;
+        $this->name = $album->post_title;
+        $this->owner = $album->post_author;
         if ($this->group_id > 0) {
             $current_group = new BP_Groups_Group($this->group_id);
             $group_url = bp_get_group_permalink($current_group);
@@ -103,18 +117,9 @@ class BPMediaAlbum {
             'post_parent' => $this->id,
             'post_type' => 'attachment'
                 ));
-        $attachments_featured = get_children(array(
-            'numberposts' => 1,
-            'meta_key' => 'featured',
-            'orderby' => 'meta_value',
-            'post_mime_type' => 'image',
-            'post_parent' => $this->id,
-            'post_type' => 'attachment',
-                ));
-        if ($attachments_featured) {
-            foreach ($attachments_featured as $attachment) {
-                $this->thumbnail = '<span><img src="' . wp_get_attachment_thumb_url($attachment->ID) . '"></span>';
-            }
+		$thumbnail_id = get_post_thumbnail_id($this->id);
+        if ($thumbnail_id) {
+                $this->thumbnail = '<span><img src="' . wp_get_attachment_thumb_url($thumbnail_id) . '"></span>';
         } elseif ($attachments) {
             foreach ($attachments as $attachment) {
                 $this->thumbnail = '<span><img src="' . wp_get_attachment_thumb_url($attachment->ID) . '"></span>';
@@ -161,8 +166,6 @@ class BPMediaAlbum {
             'post_type' => 'bp_media_album',
             'post_author' => $author_id
         );
-        BPMediaActions::init_count($author_id);
-        global $bp_media_count;
         $album_id = wp_insert_post($post_vars);
         if ($group_id) {
             add_post_meta($album_id, 'bp-media-key', (-$group_id));
@@ -170,8 +173,6 @@ class BPMediaAlbum {
             add_post_meta($album_id, 'bp-media-key', $author_id);
         }
         $this->init($album_id);
-        $bp_media_count['albums'] = intval(isset($bp_media_count['albums']) ? $bp_media_count['albums'] : 0) + 1;
-        bp_update_user_meta($author_id, 'bp_media_count', $bp_media_count);
         do_action('bp_media_after_add_album', $this);
         return $album_id;
     }
@@ -198,9 +199,6 @@ class BPMediaAlbum {
         $author_id = $this->owner;
         BPMediaActions::init_count($author_id);
         wp_delete_post($this->id, true);
-        global $bp_media_count;
-        $bp_media_count['albums'] = intval(isset($bp_media_count['albums']) ? $bp_media_count['albums'] : 0) - 1;
-        bp_update_user_meta($author_id, 'bp_media_count', $bp_media_count);
         do_action('bp_media_after_delete_album', $this);
     }
 

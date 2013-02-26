@@ -34,7 +34,7 @@ class BPMediaAlbumScreen extends BPMediaScreen {
                 case BP_MEDIA_ALBUMS_EDIT_SLUG :
                     $this->edit_screen();
                     break;
-                case BP_MEDIA_ALBUMS_ENTRY_SLUG:
+                case BP_MEDIA_ALBUMS_VIEW_SLUG:
                     $this->entry_screen();
                     $this->template_actions('entry_screen');
                     break;
@@ -90,7 +90,7 @@ class BPMediaAlbumScreen extends BPMediaScreen {
      */
     function entry_screen() {
         global $bp, $bp_media_current_album;
-        if (!$bp->action_variables[0] == BP_MEDIA_ALBUMS_ENTRY_SLUG)
+        if (!$bp->action_variables[0] == BP_MEDIA_ALBUMS_VIEW_SLUG)
             return false;
         try {
             $bp_media_current_album = new BPMediaAlbum($bp->action_variables[1]);
@@ -112,18 +112,14 @@ class BPMediaAlbumScreen extends BPMediaScreen {
      */
     function entry_screen_content() {
         global $bp, $bp_media_current_album, $bp_media_query;
-        if (!$bp->action_variables[0] == BP_MEDIA_ALBUMS_ENTRY_SLUG)
+        if (!$bp->action_variables[0] == BP_MEDIA_ALBUMS_VIEW_SLUG)
             return false;
-        echo '<div class="bp_media_title">' . $bp_media_current_album->get_title() . '</div>';
         if (bp_displayed_user_id() == bp_loggedin_user_id()) {
-            echo '<div class="activity-meta">';
-            echo '<a href="' . $bp_media_current_album->get_edit_url() . '" class="button item-button bp-secondary-action bp-media-edit bp-media-edit-album" title="' . __('Rename Album', BP_MEDIA_TXT_DOMAIN) . '">' . __('Rename', BP_MEDIA_TXT_DOMAIN) . '</a>';
+            echo '<div class="album-edit">';
+            echo '<a href="' . $bp_media_current_album->get_edit_url() . '" class="button item-button bp-secondary-action bp-media-edit bp-media-edit-album" title="' . __('Edit Album', BP_MEDIA_TXT_DOMAIN) . '">' . __('Edit', BP_MEDIA_TXT_DOMAIN) . '</a>';
             echo '<a href="' . $bp_media_current_album->get_delete_url() . '" class="button item-button bp-secondary-action delete-activity-single confirm" rel="nofollow">' . __("Delete", BP_MEDIA_TXT_DOMAIN) . '</a>';
             echo '</div>';
         }
-        $total_post = 10;
-        $total_post = get_option('posts_per_page');
-        
         $this->inner_query($bp_media_current_album->get_id());
         $this->hook_before();
         if ($bp_media_current_album && $bp_media_query->have_posts()):
@@ -132,11 +128,9 @@ class BPMediaAlbumScreen extends BPMediaScreen {
                 echo '<li>';
                 BPMediaUploadScreen::upload_screen_content();
                 echo '</li>';
-                $total_post--;
             }
-            while ($bp_media_query->have_posts() && $total_post>0) : $bp_media_query->the_post();
+            while ($bp_media_query->have_posts()) : $bp_media_query->the_post();
                 $this->template->the_content();
-                $total_post--;
             endwhile;
             echo '</ul>';
             $this->template->show_more();
@@ -148,6 +142,14 @@ class BPMediaAlbumScreen extends BPMediaScreen {
             }
         endif;
         $this->hook_after();
+    }
+
+	function entry_screen_title() {
+
+        global $bp_media_current_album;
+        /** @var $bp_media_current_entry BPMediaHostWordpress */
+        if (is_object($bp_media_current_album))
+            echo $bp_media_current_album->get_title();
     }
 
     /**
@@ -163,27 +165,13 @@ class BPMediaAlbumScreen extends BPMediaScreen {
             $paged = 1;
         }
         if ($bp->current_action == BP_MEDIA_ALBUMS_SLUG) {
-            $args = array(
-                'post_type' => 'bp_media_album',
-                'author' => $bp->displayed_user->id,
-                'paged' => $paged,
-                'meta_key' => 'bp-media-key',
-                'meta_value' => $bp->displayed_user->id,
-                'meta_compare' => '='
-            );
-            $bp_media_albums_query = new WP_Query($args);
+            $query = new BPMediaQuery();
+			$args = $query->init('album');
+			$bp_media_albums_query = new WP_Query($args);
         }
     }
 
 
-
-    /**
-     *
-     * @param type $action
-     */
-    function template_actions($action) {
-        add_action('bp_template_content', array($this, $action . '_content'));
-    }
 
     /**
      *
@@ -204,14 +192,14 @@ class BPMediaAlbumScreen extends BPMediaScreen {
         if (!$paged)
             $paged = 1;
 		$this->filter_entries();
-        $args = array(
-            'post_type' => 'attachment',
-            'post_status' => 'any',
-            'post_parent' => $album_id,
-            'paged' => $paged,
-			'post_mime_type'=>$this->filters
-        );
-        $bp_media_query = new WP_Query($args);
+		if($bp->current_component=='groups'){
+                    // do something
+		}
+        if ($bp->current_action == BP_MEDIA_ALBUMS_SLUG) {
+            $query = new BPMediaQuery();
+			$args = $query->init(false,$album_id,false,$paged);
+			$bp_media_query = new WP_Query($args);
+        }
     }
 
 	function filter_entries(){

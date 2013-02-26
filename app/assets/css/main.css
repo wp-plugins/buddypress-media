@@ -3,7 +3,8 @@
 */
 .bp_media_content img{max-width:98%;}
 .bp_media_content .mejs-poster img{max-width: 100%;}
-.bp_media_title {display:block;font-size:20px;font-weight:bold;}
+.media.albums .album-edit{display:inline;}
+.media h3 {display:block;font-size:20px;font-weight:bold;}
 ul.bp-media-gallery{overflow: hidden}
 .bp_media_description {display:block;margin-top:20px;}
 ul.bp-media-gallery.item-list{overflow:visible;margin: 1% 0;width: auto;}
@@ -16,7 +17,7 @@ ul.bp-media-gallery li span img{height: 150px;}
 .bp-media-single .activity-list .activity-content,.bp-media-single div.activity-comments{margin-left:0;}
 #bp-media-selected-album{max-width: 320px;}
 /*li.media div.activity-content div.activity-inner p{display:none;}*/
-div.bp_media_title{margin-bottom:10px;}
+.media h3{margin-bottom:10px;}
 #bp-media-footer {color: #4D4D4D;text-align: center;text-shadow: #FAFAFA 1px 1px 0;}
 #wpbody-content div.metabox-fixed{width: 280px;margin-right: -300px;float: right;}
 #wpbody-content div.wrap.bp-media-admin .columns-2{margin-right:300px;padding-top: 0;margin-top: 15px;width: 600px}
@@ -124,8 +125,28 @@ ul#social li{display:inline;}
 ul#activity-stream li.media.album_updated ul{}
 ul#activity-stream li.media.album_updated ul li{float: left;margin-right:2%}
 
-
+.wrap.bp-media-admin .bp-media-settings-tabs a.nav-tab{padding-left:20px;background:url('../img/tab-icon.png') 3px -4px no-repeat;}
+.wrap.bp-media-admin .bp-media-settings-tabs a.nav-tab.addons{background-position-y:-34px;}
+.wrap.bp-media-admin .bp-media-settings-tabs a.nav-tab.support{background-position-y:-64px;}
+.wrap.bp-media-admin .bp-media-settings-tabs a.nav-tab.update-database{background-position-y:-94px;}
+.wrap.bp-media-admin .bp-media-settings-tabs a.nav-tab.ffmpeg{background-position-y:-154px;}
+.wrap.bp-media-admin .bp-media-settings-tabs a.nav-tab.kaltura{background-position-y:-184px;}
+.wrap.bp-media-admin .bp-media-settings-tabs a.nav-tab.convert-videos{background-position-y:-214px;}
 /* Addons page Styling */
+
+a.toplevel_page_bp-media-settings div.wp-menu-image{
+	background:url('../img/admin-menu.png') 0 -32px no-repeat;
+}
+.media ul#bp-media-upload-set-privacy li input[type="radio"]{float:left;}
+#rt-donate-button, .rt-link img{vertical-align: middle;}
+#adminmenu .menu-icon-generic.toplevel_page_bp-media-settings div.wp-menu-image{
+	background-position: 0 -32px;
+}
+#adminmenu .menu-icon-generic.wp-has-current-submenu.toplevel_page_bp-media-settings div.wp-menu-image,
+#adminmenu .menu-icon-generic.toplevel_page_bp-media-settings:hover div.wp-menu-image{
+	background-position-y:0;
+}
+
 #bp-media-addons-list_metabox {background: #ffffff}
 .products ul:after, ul.products:after {clear: both;content: "";display: block;}
 .products ul, ul.products {clear: both;list-style: none outside none;margin: 0 0 14px;padding: 0;}
@@ -143,21 +164,7 @@ ul#activity-stream li.media.album_updated ul li{float: left;margin-right:2%}
 .coming-soon.coming-soon-l { background-position: 0 0; width:250px; top:-12px; left:-18px;}
 .coming-soon.coming-soon-r { background-position: 347px 0; width:174px; bottom:-14px; right:-12px;}
 .coming-soon.coming-soon-r:hover{background-position: 175px 0;}
-/*.bp-media-addon .add_to_cart_button{background-image: linear-gradient(bottom, #F7F6F7 47%, #DFDBDF 74%);
-background-image: -o-linear-gradient(bottom, #F7F6F7 0%, #DFDBDF 100%);
-background-image: -moz-linear-gradient(bottom, #F7F6F7 0%, #DFDBDF 100%);
-background-image: -webkit-linear-gradient(bottom, #F7F6F7 0%, #DFDBDF 100%);
-background-image: -ms-linear-gradient(bottom, #F7F6F7 0%, #DFDBDF 100%);
-background-image: -webkit-gradient(linear,left bottom,left top,color-stop(0, #F7F6F7),color-stop(1, #DFDBDF));
-border: 1px solid #C7C0C7;border-radius: 2px 2px 2px 2px;box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.075) inset, 0 1px 0 rgba(255, 255, 255, 0.3) inset, 0 1px 2px rgba(0, 0, 0, 0.1);color: #5E5E5E;cursor: pointer;font-family: inherit;font-size: 14px;font-weight: bold;float: right;left: auto;margin: 0;overflow: visible;padding: 6px 10px;position: relative;text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);font-family: "HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",sans-serif;}
 
-.bp-media-addon .add_to_cart_button:hover{background-image: linear-gradient(bottom, #F7F6F7 47%, #DFDBDF 74%);
-background-image: -o-linear-gradient(bottom, #F7F6F7 0%, #D3CED3 100%);
-background-image: -moz-linear-gradient(bottom, #F7F6F7 0%, #D3CED3 100%);
-background-image: -webkit-linear-gradient(bottom, #F7F6F7 0%, #D3CED3 100%);
-background-image: -ms-linear-gradient(bottom, #F7F6F7 0%, #D3CED3 100%);
-background-image: -webkit-gradient(linear,left bottom,left top,color-stop(1, #F7F6F7),color-stop(1, #D3CED3));}
-*/
 .bp-media-addon .product_footer{margin: 20px 0 0;overflow: hidden;}
 .bp-media-addon .add_to_cart_button{background: #C45200; color: #FFFFFF;display: inline-block;font-size: 18px;font-weight: bold; line-height: 1.4em; margin: 0 20px; padding: 4px 15px;text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6)}
 .bp-media-addon .product_footer .product_demo_link{font-size: 16px;margin: 8px 20px; font-weight: bold}
@@ -188,12 +195,31 @@ background-image: -webkit-gradient(linear,left bottom,left top,color-stop(1, #F7
 .template_select_label{float: left}
 .template_select_container{overflow-x:scroll; width:405px;float: left}
 #bp_media_settings_form .support_form_laoder{height: 100px; width: 200px; background:  url("../img/loader.gif") no-repeat }
-/* Miscellinus */
+/* Miscellaneous */
 #normal-sortables .postbox .bp-media-form .submit{float: none; margin-left: 150px}
 .rt-success{background-color: #E1FFDF;border-color: #2ACF2A;}
 .rt-update{background-color: #FFEAA6;border-color:#E1CA82;}
 img.bp-media-donation-image{display:block;margin: 10px auto;}
 #donate form{text-align: center;}
+/* Privacy settings */
+#bp-media-upload-set-privacy li{margin: 10px 0;overflow: hidden;}
+#bp-media-upload-set-privacy .album-set-privacy-radio{}
+#bp-media-upload-set-privacy .album-set-privacy-label{margin: 0;font-weight: normal;}
+/*Transcoding Teaser*/
+.para-blockquote { background: #E5E5E5; padding: 10px; font-style: italic; }
+
+#rtprogressbar {
+  background-color: #444;
+  border-radius: 13px;
+  padding: 3px;
+}
+
+#rtprogressbar div {
+   background-color: #fb6003;
+   width: 0;
+   height: 20px;
+   border-radius: 10px;
+}
 
 @media (min-width: 981px) and (max-width: 1096px) {
     li #bp-media-upload-ui #drag-drop-area{padding: 10px 0;}

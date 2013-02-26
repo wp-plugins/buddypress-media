@@ -20,15 +20,22 @@ class BPMediaActions {
         add_action('bp_activity_entry_meta', array($this, 'action_buttons'));
         add_action('bp_media_before_delete_media', 'BPMediaActions::delete_media_handler');
         add_action('bp_media_after_add_album', array($this, 'album_create_activity'));
+		add_action('bp_media_after_add_album', array($this,'update_count'), 99,2);
         add_action('bp_media_album_updated', 'BPMediaActions::album_activity_update');
+		add_action('bp_media_album_updated', array($this,'update_count'), 99,2);
+		add_action('bp_media_after_edit_album', array($this,'update_count'), 99,2);
+		add_action('bp_media_after_delete_album', array($this,'update_count'), 99,1);
         add_action('bp_media_after_delete_media', array($this, 'album_activity_sync'));
         add_action('bp_media_after_add_media', 'BPMediaActions::activity_create_after_add_media', 10, 4);
         add_action('wp_ajax_bp_media_load_more', array($this, 'load_more'));
-//        add_action('wp_ajax_bp_media_get_attachment_html', array($this, 'fetch_feed'), 1);
         add_action('wp_ajax_nopriv_bp_media_load_more', array($this, 'load_more'));
+        add_action('wp_ajax_bp_media_set_album_cover', array($this, 'set_album_cover'));
         add_action('delete_attachment', array($this, 'delete_attachment_handler'));
         add_action('wp_ajax_bp_media_add_album', array($this, 'add_album'));
-        add_action('wp_ajax_nopriv_bp_media_add_album', array($this, 'add_album'));
+		add_action('bp_media_after_privacy_install', array($this,'update_count'));
+		add_action('bp_media_no_object_after_add_media', array($this,'update_count'), 99,2);
+		add_action('bp_media_after_update_media', array($this,'update_count'), 99,2);
+		add_action('bp_media_after_delete_media', array($this,'update_count'), 99,1);
         $linkback = bp_get_option('bp_media_add_linkback', false);
         if ($linkback)
             add_action('bp_footer', array($this, 'footer'));
@@ -47,12 +54,8 @@ class BPMediaActions {
      * @return type
      */
     static function handle_uploads() {
-        global $bp, $bp_media_options;
-        $bp_media_options = get_site_option('bp_media_options', array(
-            'videos_enabled' => true,
-            'audio_enabled' => true,
-            'images_enabled' => true,
-                ));
+        global $bp, $bp_media;
+        $bp_media_options = $bp_media->options;
         if (isset($_POST['action']) && $_POST['action'] == 'wp_handle_upload') {
             /** This section can help in the group activity handling */
 //            if (isset($_POST['bp_media_group_id']) && intval($_POST['bp_media_group_id'])) {
@@ -163,8 +166,6 @@ class BPMediaActions {
             'displayed_user' => bp_displayed_user_id(),
             'loggedin_user' => bp_loggedin_user_id(),
             'current_group' => $cur_group_id,
-            'feature' => __('Featured', BP_MEDIA_TXT_DOMAIN),
-            'removefeature' => __('Remove Featured', BP_MEDIA_TXT_DOMAIN)
         );
 
         wp_localize_script('bp-media-default', 'bp_media_vars', $bp_media_vars);
@@ -296,7 +297,7 @@ class BPMediaActions {
     function action_buttons() {
         if (!in_array('bp_media_current_entry', $GLOBALS))
             return false;
-        global $bp_media_current_entry, $bp_media_options;
+        global $bp_media_current_entry, $bp_media;
 
         if ($bp_media_current_entry != NULL) {
             $featured_post = get_post_meta($bp_media_current_entry->get_id(), 'featured', true);
@@ -305,23 +306,23 @@ class BPMediaActions {
                 echo '<a href="' . $bp_media_current_entry->get_edit_url()
                 . '" class="button item-button bp-secondary-action bp-media-edit" title="'
                 . __('Edit Media', BP_MEDIA_TXT_DOMAIN) . '">' . __('Edit', BP_MEDIA_TXT_DOMAIN) . '</a>';
-
-            if ($bp_media_options['download_enabled'] == true)
+            if (isset($bp_media->options['download_enabled']))
                 echo '<a href="' . $bp_media_current_entry->get_attachment_url()
                 . '" class="button item-button bp-secondary-action bp-media-download" title="'
                 . __('Download', BP_MEDIA_TXT_DOMAIN) . '">' . __('Download', BP_MEDIA_TXT_DOMAIN) . '</a>';
 
-            if (bp_displayed_user_id() == bp_loggedin_user_id() && $featured_post == '')
-                echo '<a href="' . $bp_media_current_entry->get_album_id()
-                . '" rel="" data-album-id="' . $bp_media_current_entry->get_album_id()
-                . '"  data-post-id="' . $bp_media_current_entry->get_id()
-                . '" class="button item-button bp-secondary-action bp-media-featured" title="'
-                . __('Featured Media', BP_MEDIA_TXT_DOMAIN) . '">' . __('Featured', BP_MEDIA_TXT_DOMAIN) . '</a>';
-            else
-                echo '<a href="' . $bp_media_current_entry->get_album_id() . '" rel="" data-remove-featured="1"   data-album-id="'
-                . $bp_media_current_entry->get_album_id() . '" data-post-id="' . $bp_media_current_entry->get_id()
-                . '" class="button item-button bp-secondary-action bp-media-featured" title="'
-                . __('Featured Media', BP_MEDIA_TXT_DOMAIN) . '">' . __('Remove Featured', BP_MEDIA_TXT_DOMAIN) . '</a>';
+            if ((bp_displayed_user_id() == bp_loggedin_user_id()) && ($bp_media_current_entry->get_type() == 'image')) {
+                if (get_post_thumbnail_id($bp_media_current_entry->get_album_id()) != $bp_media_current_entry->get_id())
+                    echo '<a href="#" data-album-id="' . $bp_media_current_entry->get_album_id()
+                    . '"  data-post-id="' . $bp_media_current_entry->get_id()
+                    . '" class="button item-button bp-secondary-action bp-media-featured" title="'
+                    . __('Set as Album Cover', BP_MEDIA_TXT_DOMAIN) . '">' . __('Set as Album Cover', BP_MEDIA_TXT_DOMAIN) . '</a>';
+                else
+                    echo '<a href="#" data-album-id="'
+                    . $bp_media_current_entry->get_album_id() . '" data-post-id="' . $bp_media_current_entry->get_id()
+                    . '" class="button item-button bp-secondary-action bp-media-featured" title="'
+                    . __('Unset as Album Cover', BP_MEDIA_TXT_DOMAIN) . '">' . __('Unset as Album Cover', BP_MEDIA_TXT_DOMAIN) . '</a>';
+            }
         }
     }
 
@@ -340,7 +341,9 @@ class BPMediaActions {
      * @return boolean
      */
     static function init_count($user = null) {
-        global $bp_media_count;
+        global $bp_media_count,$bp_media;
+		$enabled = $bp_media->enabled();
+		$current_access = BPMediaPrivacy::current_access();
         if (!$user)
             $user = bp_displayed_user_id();
         if ($user < 1) {
@@ -349,10 +352,37 @@ class BPMediaActions {
         }
         $count = bp_get_user_meta($user, 'bp_media_count', true);
         if (!$count) {
-            $bp_media_count = array('images' => 0, 'videos' => 0, 'audio' => 0, 'albums' => 0);
+            $bp_media_count = array(array('images' => 0, 'videos' => 0, 'audio' => 0, 'albums' => 0));
             bp_update_user_meta($user, 'bp_media_count', $bp_media_count);
         } else {
-            $bp_media_count = $count;
+			$total = array(
+				'images' => 0,
+				'videos' => 0,
+				'audio' => 0,
+				'albums' => 0,
+				'total' => 0
+			);
+			$total_count = 0;
+
+			foreach($count as $level=>$counts){
+				if($level<=$current_access){
+					foreach($counts as $media=>$number){
+						if(array_key_exists($media,$enabled)||array_key_exists($media.'s',$enabled)){
+							if($enabled[$media]){
+								$medias = $media;
+								if($media!='audio')$medias .='s';
+								$total[$medias] = $total[$medias] + $number;
+								if($media!='album'){
+								$total_count = $total_count+$total[$medias];
+								}
+							}
+						}
+					}
+					$total['total']= $total_count;
+				}
+			}
+
+            $bp_media_count = $total;
         }
         add_filter('bp_get_displayed_user_nav_' . BP_MEDIA_SLUG, 'BPMediaFilters::items_count_filter', 10, 2);
 
@@ -364,6 +394,42 @@ class BPMediaActions {
         }
         return true;
     }
+
+	public function update_count() {
+		global $bp;
+		$user_id = $bp->loggedin_user->id;
+            global $wpdb;
+
+            $query =
+                    "SELECT
+		SUM(CASE WHEN post_mime_type LIKE 'image%' THEN 1 ELSE 0 END) as Images,
+		SUM(CASE WHEN post_mime_type LIKE 'audio%' THEN 1 ELSE 0 END) as Audio,
+		SUM(CASE WHEN post_mime_type LIKE 'video%' THEN 1 ELSE 0 END) as Videos,
+		SUM(CASE WHEN post_type LIKE 'bp_media_album' THEN 1 ELSE 0 END) as Albums
+	FROM
+		$wpdb->posts p inner join $wpdb->postmeta  pm on pm.post_id = p.id INNER JOIN $wpdb->postmeta pmp
+		on pmp.post_id = p.id  WHERE
+		p.post_author = $user_id AND
+		pm.meta_key = 'bp-media-key' AND
+		pm.meta_value > 0 AND
+		pmp.meta_key = 'bp_media_privacy' AND
+		( post_mime_type LIKE 'image%' OR post_mime_type LIKE 'audio%' OR post_mime_type LIKE 'video%' OR post_type LIKE 'bp_media_album')
+	GROUP BY pmp.meta_value";
+            $result = $wpdb->get_results($query);
+			 if (!is_array($result))
+                return false;
+            foreach ($result as $level=>$obj) {
+				$formatted[$level] = array(
+					'image'=>$obj->Images,
+					'video'=>$obj->Videos,
+					'audio'=>$obj->Audio,
+					'album'=>$obj->Albums,
+				);
+			}
+            bp_update_user_meta($user_id, 'bp_media_count', $formatted);
+            return true;
+        }
+
 
     /**
      * Displays the footer of the BuddyPress Media Plugin if enabled through the dashboard options page
@@ -490,90 +556,45 @@ class BPMediaActions {
      */
     function load_more() {
 
-        global $bp, $bp_media_query;
+        global $bp, $bp_media_query, $bp_media;
         $page = isset($_POST['page']) ? $_POST['page'] : die();
         $current_action = isset($_POST['current_action']) ? $_POST['current_action'] : null;
         $action_variables = isset($_POST['action_variables']) ? $_POST['action_variables'] : null;
         $displayed_user = isset($_POST['displayed_user']) ? $_POST['displayed_user'] : null;
         $loggedin_user = isset($_POST['loggedin_user']) ? $_POST['loggedin_user'] : null;
         $current_group = isset($_POST['current_group']) ? $_POST['current_group'] : null;
-        $limit = 10;
-        if ( ($displayed_user == $loggedin_user && $current_group == 0) || groups_is_user_member($loggedin_user, $current_group)) {
-            $limit = get_option('posts_per_page');
-            $offset = $limit*($page-1)-1;
+		$album_id = isset($_POST['album_id']) ? $_POST['album_id'] : false;
+        if ($current_group) {
+            $type_var = isset($action_variables[0]) ? $action_variables[0] : '';
         } else {
-            $limit = get_option('posts_per_page');
-            $offset = $limit*($page-1);
+            $type_var = $current_action;
         }
+
+		if($current_action=='albums'){
+			if(isset($action_variables[1])){
+			$album_id= $action_variables[1];
+			}
+		}
+	
         if ((!$displayed_user || intval($displayed_user) == 0) && (!$current_group || intval($current_group) == 0)) {
             die();
         }
-        global $bp_media;
-        $enabled = $bp_media->enabled();
-
-        switch ($current_action) {
+        switch ($type_var) {
             case BP_MEDIA_IMAGES_SLUG:
-                $args = array(
-                    'post_type' => 'attachment',
-                    'post_status' => 'any',
-                    'post_mime_type' => 'image',
-                    'meta_key' => 'bp-media-key',
-                    'meta_value' => $current_group > 0 ? -$current_group : $displayed_user,
-                    'meta_compare' => '=',
-                    'offset' => $offset,
-                    'posts_per_page' => $limit
-                );
+                $type = 'image';
                 break;
             case BP_MEDIA_AUDIO_SLUG:
-                $args = array(
-                    'post_type' => 'attachment',
-                    'post_status' => 'any',
-                    'post_mime_type' => 'audio',
-                    'author' => $bp->displayed_user->id,
-                    'meta_key' => 'bp-media-key',
-                    'meta_value' => $current_group > 0 ? -$current_group : $displayed_user,
-                    'meta_compare' => '=',
-                    'offset' => $offset,
-                    'posts_per_page' => $limit
-                );
+                $type = 'audio';
                 break;
             case BP_MEDIA_VIDEOS_SLUG:
-                $args = array(
-                    'post_type' => 'attachment',
-                    'post_status' => 'any',
-                    'post_mime_type' => 'video',
-                    'author' => $bp->displayed_user->id,
-                    'meta_key' => 'bp-media-key',
-                    'meta_value' => $current_group > 0 ? -$current_group : $displayed_user,
-                    'meta_compare' => '=',
-                    'offset' => $offset,
-                    'posts_per_page' => $limit
-                );
+                $type = 'video';
                 break;
-            case BP_MEDIA_ALBUMS_SLUG:
-                if (isset($action_variables) && is_array($action_variables) && isset($action_variables[0]) && isset($action_variables[1])) {
-                    $args = array(
-                        'post_type' => 'attachment',
-                        'post_status' => 'any',
-                        'author' => $displayed_user,
-                        'post_parent' => $action_variables[1],
-                        'offset' => $offset,
-                        'posts_per_page' => $limit,
-                        'post_mime_type' => $this->filter_entries(),
-                    );
-                } else {
-                    $args = array(
-                        'post_type' => 'bp_media_album',
-                        'author' => $displayed_user,
-                        'offset' => $offset,
-                        'posts_per_page' => $limit,
-                        'post_mime_type' => $this->filter_entries(),
-                    );
-                }
-                break;
-            default:
-                die();
+            default :
+                $type = null;
         }
+
+        $query = new BPMediaQuery();
+        $args = $query->init($type,$album_id,false, $page);
         $bp_media_query = new WP_Query($args);
         if (isset($bp_media_query->posts) && is_array($bp_media_query->posts) && count($bp_media_query->posts)) {
             foreach ($bp_media_query->posts as $attachment) {
@@ -755,6 +776,22 @@ class BPMediaActions {
             if (!$update_activity_id)
                 add_post_meta($media->get_id(), 'bp_media_child_activity', $activity_id);
         }
+    }
+
+    public function set_album_cover() {
+        $id = $_POST['post_id'];
+        $album_id = $_POST['album_id'];
+        $album_cover = get_post_thumbnail_id($album_id);
+        $text = NULL;
+        if ($album_cover && ($album_cover == $id)) {
+            delete_post_thumbnail($album_id);
+            $text = __('Set as Album Cover', BP_MEDIA_TXT_DOMAIN);
+        } else {
+            set_post_thumbnail($album_id, $id);
+            $text = __('Unset as Album Cover', BP_MEDIA_TXT_DOMAIN);
+        }
+        echo $text;
+        die;
     }
 
 }

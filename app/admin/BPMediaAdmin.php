@@ -17,6 +17,7 @@ if (!class_exists('BPMediaAdmin')) {
         public $bp_media_feed;
 
         public function __construct() {
+            add_action('init',array($this, 'video_transcoding_survey_response'));
             $bp_media_feed = new BPMediaFeed();
             add_action('wp_ajax_bp_media_fetch_feed', array($bp_media_feed, 'fetch_feed'), 1);
             $bp_media_support = new BPMediaSupport();
@@ -25,6 +26,7 @@ if (!class_exists('BPMediaAdmin')) {
             add_action('wp_ajax_bp_media_submit_request', array($bp_media_support, 'submit_request'), 1);
             add_action('wp_ajax_bp_media_fetch_feed', array($bp_media_feed, 'fetch_feed'), 1);
             add_action('wp_ajax_bp_media_linkback', array($this, 'linkback'), 1);
+            add_action('wp_ajax_bp_media_convert_videos_form', array($this, 'convert_videos_mailchimp_send'), 1);
             if (is_admin()) {
                 add_action('admin_enqueue_scripts', array($this, 'ui'));
                 add_action(bp_core_admin_hook(), array($this, 'menu'));
@@ -38,19 +40,22 @@ if (!class_exists('BPMediaAdmin')) {
         }
 
         /**
-         * Generates the Admin UI
+         * Generates the Admin UI.
          *
          * @param string $hook
          */
 
         /**
-         * 
+         *
          * @param type $hook
          */
         public function ui($hook) {
             $admin_ajax = admin_url('admin-ajax.php');
             wp_enqueue_script('bp-media-admin', BP_MEDIA_URL . 'app/assets/js/admin.js');
             wp_localize_script('bp-media-admin', 'bp_media_admin_ajax', $admin_ajax);
+            wp_localize_script('bp-media-admin', 'settings_url', add_query_arg(
+                            array('page' => 'bp-media-settings'), (is_multisite() ? network_admin_url('admin.php') : admin_url('admin.php'))
+                    ) . '#privacy_enabled');
             wp_enqueue_style('bp-media-admin', BP_MEDIA_URL . 'app/assets/css/main.css');
         }
 
@@ -62,8 +67,14 @@ if (!class_exists('BPMediaAdmin')) {
         public function menu() {
             add_menu_page(__('BuddyPress Media Component', BP_MEDIA_TXT_DOMAIN), __('BuddyPress Media', BP_MEDIA_TXT_DOMAIN), 'manage_options', 'bp-media-settings', array($this, 'settings_page'));
             add_submenu_page('bp-media-settings', __('BuddyPress Media Settings', BP_MEDIA_TXT_DOMAIN), __('Settings', BP_MEDIA_TXT_DOMAIN), 'manage_options', 'bp-media-settings', array($this, 'settings_page'));
+            if ( ! BPMediaPrivacy::is_installed() ) {
+                    add_submenu_page('bp-media-settings', __('BuddyPress Media Database Update', BP_MEDIA_TXT_DOMAIN), __('Update Database', BP_MEDIA_TXT_DOMAIN), 'manage_options', 'bp-media-privacy', array($this, 'privacy_page'));
+            }
             add_submenu_page('bp-media-settings', __('BuddyPress Media Addons', BP_MEDIA_TXT_DOMAIN), __('Addons', BP_MEDIA_TXT_DOMAIN), 'manage_options', 'bp-media-addons', array($this, 'addons_page'));
             add_submenu_page('bp-media-settings', __('BuddyPress Media Support', BP_MEDIA_TXT_DOMAIN), __('Support ', BP_MEDIA_TXT_DOMAIN), 'manage_options', 'bp-media-support', array($this, 'support_page'));
+            if ( bp_get_option('bp-media-survey', true) ) {
+                add_submenu_page('bp-media-settings', __('BuddyPress Media Convert Videos', BP_MEDIA_TXT_DOMAIN), __('Convert Videos', BP_MEDIA_TXT_DOMAIN), 'manage_options', 'bp-media-convert-videos', array($this, 'convert_videos_page'));
+            }
         }
 
         /**
@@ -71,6 +82,14 @@ if (!class_exists('BPMediaAdmin')) {
          */
         public function settings_page() {
             $this->render_page('bp-media-settings', 'bp_media');
+        }
+
+        public function privacy_page() {
+            $this->render_page('bp-media-privacy');
+        }
+
+        public function convert_videos_page() {
+            $this->render_page('bp-media-convert-videos');
         }
 
         /**
@@ -88,7 +107,7 @@ if (!class_exists('BPMediaAdmin')) {
         }
 
         /**
-         * 
+         *
          * @return type
          */
         static function get_current_tab() {
@@ -102,7 +121,7 @@ if (!class_exists('BPMediaAdmin')) {
          */
 
         /**
-         * 
+         *
          * @param type $page
          * @param type $option_group
          */
@@ -115,7 +134,7 @@ if (!class_exists('BPMediaAdmin')) {
                 <?php settings_errors(); ?>
                 <div class="columns-2">
                     <h3 class="bp-media-settings-tabs"><?php
-            $this->sub_tabs();
+                $this->sub_tabs();
                 ?>
                     </h3>
 
@@ -133,7 +152,7 @@ if (!class_exists('BPMediaAdmin')) {
                 do_settings_sections($page);
             }
                         ?>
-                                <div class="rt-link alignright"><?php _e('By', BP_MEDIA_TXT_DOMAIN); ?> <a href="http://rtcamp.com" title="<?php _e('Empowering The Web With WordPress', BP_MEDIA_TXT_DOMAIN); ?>"><?php _e('rtCamp', BP_MEDIA_TXT_DOMAIN); ?></a></div>
+                                <div class="rt-link alignright"><?php _e('By', BP_MEDIA_TXT_DOMAIN); ?> <a href="http://rtcamp.com" title="<?php _e('Empowering The Web With WordPress', BP_MEDIA_TXT_DOMAIN); ?>"><img src="<?php echo BP_MEDIA_URL; ?>app/assets/img/rtcamp-logo.png"></a></div>
                             </div>
 
                         </form>
@@ -143,164 +162,178 @@ if (!class_exists('BPMediaAdmin')) {
                     </div>
                 </div><!-- .metabox-holder -->
             </div><!-- .bp-media-admin --><?php
-        }
+                    }
 
-        /**
-         * Adds a tab for Media settings in the BuddyPress settings page
-         *
-         * @global type $bp_media
-         */
-        public function tab() {
+                    /**
+                     * Adds a tab for Media settings in the BuddyPress settings page
+                     *
+                     * @global type $bp_media
+                     */
+                    public function tab() {
 
-            $tabs_html = '';
-            $idle_class = 'nav-tab';
-            $active_class = 'nav-tab nav-tab-active';
-            $tabs = array();
+                        $tabs_html = '';
+                        $idle_class = 'nav-tab';
+                        $active_class = 'nav-tab nav-tab-active';
+                        $tabs = array();
 
-            // Check to see which tab we are on
-            $tab = $this->get_current_tab();
-            /* BuddyPress Media */
-            $tabs[] = array(
-                'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-settings'), 'admin.php')),
-                'title' => __('BuddyPress Media', BP_MEDIA_TXT_DOMAIN),
-                'name' => __('BuddyPress Media', BP_MEDIA_TXT_DOMAIN),
-                'class' => ($tab == 'bp-media-settings' || $tab == 'bp-media-addons' || $tab == 'bp-media-support') ? $active_class : $idle_class
-            );
+                        // Check to see which tab we are on
+                        $tab = $this->get_current_tab();
+                        /* BuddyPress Media */
+                        $tabs[] = array(
+                            'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-settings'), 'admin.php')),
+                            'title' => __('BuddyPress Media', BP_MEDIA_TXT_DOMAIN),
+                            'name' => __('BuddyPress Media', BP_MEDIA_TXT_DOMAIN),
+                            'class' => ($tab == 'bp-media-settings' || $tab == 'bp-media-addons' || $tab == 'bp-media-support') ? $active_class : $idle_class
+                        );
 
-            foreach ($tabs as $tab) {
-                $tabs_html.= '<a id="bp-media" title= "' . $tab['title'] . '"  href="' . $tab['href'] . '" class="' . $tab['class'] . '">' . $tab['name'] . '</a>';
-            }
-            echo $tabs_html;
-        }
 
-        /**
-         * Adds a sub tabs to the BuddyPress Media settings page
-         *
-         * @global type $bp_media
-         */
-        public function sub_tabs() {
-            $tabs_html = '';
-            $idle_class = 'nav-tab';
-            $active_class = 'nav-tab nav-tab-active';
-            $tabs = array();
+                        foreach ($tabs as $tab) {
+                            $tabs_html.= '<a id="bp-media" title= "' . $tab['title'] . '"  href="' . $tab['href'] . '" class="' . $tab['class'] . '">' . $tab['name'] . '</a>';
+                        }
+                        echo $tabs_html;
+                    }
 
-            // Check to see which tab we are on
-            $tab = $this->get_current_tab();
-            /* BuddyPress Media */
-            $tabs[] = array(
-                'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-settings'), 'admin.php')),
-                'title' => __('BuddyPress Media Settings', BP_MEDIA_TXT_DOMAIN),
-                'name' => __('Settings', BP_MEDIA_TXT_DOMAIN),
-                'class' => ($tab == 'bp-media-settings') ? $active_class : $idle_class . ' first_tab'
-            );
+                    /**
+                     * Adds a sub tabs to the BuddyPress Media settings page
+                     *
+                     * @global type $bp_media
+                     */
+                    public function sub_tabs() {
+                        $tabs_html = '';
+                        $idle_class = 'nav-tab';
+                        $active_class = 'nav-tab nav-tab-active';
+                        $tabs = array();
 
-            $tabs[] = array(
-                'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-addons'), 'admin.php')),
-                'title' => __('BuddyPress Media Addons', BP_MEDIA_TXT_DOMAIN),
-                'name' => __('Addons', BP_MEDIA_TXT_DOMAIN),
-                'class' => ($tab == 'bp-media-addons') ? $active_class : $idle_class
-            );
+                        // Check to see which tab we are on
+                        $tab = $this->get_current_tab();
+                        /* BuddyPress Media */
+                        $tabs[] = array(
+                            'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-settings'), 'admin.php')),
+                            'title' => __('BuddyPress Media Settings', BP_MEDIA_TXT_DOMAIN),
+                            'name' => __('Settings', BP_MEDIA_TXT_DOMAIN),
+                            'class' => ($tab == 'bp-media-settings') ? $active_class : $idle_class . ' first_tab'
+                        );
 
-            $tabs[] = array(
-                'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-support'), 'admin.php')),
-                'title' => __('BuddyPress Media Support', BP_MEDIA_TXT_DOMAIN),
-                'name' => __('Support', BP_MEDIA_TXT_DOMAIN),
-                'class' => ($tab == 'bp-media-support') ? $active_class : $idle_class . ' last_tab'
-            );
-            $tabs = apply_filters('bp_media_add_sub_tabs', $tabs, $tab);
-            foreach ($tabs as $tab) {
-                $tabs_html.= '<a title="' . $tab['title'] . '" href="' . $tab['href'] . '" class="' . $tab['class'] . '">' . $tab['name'] . '</a>';
-            }
-            echo $tabs_html;
-        }
+                        $tabs[] = array(
+                            'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-addons'), 'admin.php')),
+                            'title' => __('BuddyPress Media Addons', BP_MEDIA_TXT_DOMAIN),
+                            'name' => __('Addons', BP_MEDIA_TXT_DOMAIN),
+                            'class' => ($tab == 'bp-media-addons') ? $active_class : $idle_class
+                        );
 
-        /*
-         * Updates the media count of all users.
-         */
+                        $tabs[] = array(
+                            'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-support'), 'admin.php')),
+                            'title' => __('BuddyPress Media Support', BP_MEDIA_TXT_DOMAIN),
+                            'name' => __('Support', BP_MEDIA_TXT_DOMAIN),
+                            'class' => ($tab == 'bp-media-support') ? $active_class : $idle_class . ' last_tab'
+                        );
+                        
+                        if ( bp_get_option('bp-media-survey', true) ) {
+                            $tabs[] = array(
+                                'href' => bp_get_admin_url(add_query_arg(array('page' => 'bp-media-convert-videos'), 'admin.php')),
+                                'title' => __('BuddyPress Media Covert Videos', BP_MEDIA_TXT_DOMAIN),
+                                'name' => __('Convert Videos', BP_MEDIA_TXT_DOMAIN),
+                                'class' => ($tab == 'bp-media-convert-videos') ? $active_class : $idle_class . ' last_tab'
+                            );
+                        }
 
-        /**
-         * 
-         * @global type $wpdb
-         * @return boolean
-         */
-        public function update_count() {
-            global $wpdb;
-            $query =
-                    "SELECT
-		post_author,
+                        $tabs = apply_filters('bp_media_add_sub_tabs', $tabs, $tab);
+                        foreach ($tabs as $tab) {
+                            $tabs_html.= '<a title="' . $tab['title'] . '" href="' . $tab['href'] . '" class="' . $tab['class'] . ' ' . sanitize_title($tab['name']) . '">' . $tab['name'] . '</a>';
+                        }
+                        echo $tabs_html;
+                    }
+
+                    /*
+                     * Updates the media count of all users.
+                     */
+
+                    /**
+                     *
+                     * @global type $wpdb
+                     * @return boolean
+                     */
+                    public function update_count() {
+                        global $wpdb;
+
+                        $query =
+                                "SELECT
+		p.post_author,pmp.meta_value,
 		SUM(CASE WHEN post_mime_type LIKE 'image%' THEN 1 ELSE 0 END) as Images,
 		SUM(CASE WHEN post_mime_type LIKE 'audio%' THEN 1 ELSE 0 END) as Audio,
 		SUM(CASE WHEN post_mime_type LIKE 'video%' THEN 1 ELSE 0 END) as Videos,
-		SUM(CASE WHEN post_type LIKE 'bp_media_album' THEN 1 ELSE 0 END) as Albums,
-		COUNT(*) as Total
+		SUM(CASE WHEN post_type LIKE 'bp_media_album' THEN 1 ELSE 0 END) as Albums
 	FROM
-		$wpdb->posts RIGHT JOIN $wpdb->postmeta on wp_postmeta.post_id = wp_posts.id
-	WHERE
-		`meta_key` = 'bp-media-key' AND
-		`meta_value` > 0 AND
+		$wpdb->posts p inner join $wpdb->postmeta  pm on pm.post_id = p.id INNER JOIN $wpdb->postmeta pmp
+	on pmp.post_id = p.id  WHERE
+		pm.meta_key = 'bp-media-key' AND
+		pm.meta_value > 0 AND
+		pmp.meta_key = 'bp_media_privacy' AND
 		( post_mime_type LIKE 'image%' OR post_mime_type LIKE 'audio%' OR post_mime_type LIKE 'video%' OR post_type LIKE 'bp_media_album')
-	GROUP BY post_author";
-            $result = $wpdb->get_results($query);
-            if (!is_array($result))
-                return false;
+	GROUP BY p.post_author,pmp.meta_value order by p.post_author";
+                        $result = $wpdb->get_results($query);
+                        if (!is_array($result))
+                            return false;
+                        $formatted = array();
+                        foreach ($result as $obj) {
+                            $formatted[$obj->post_author][$obj->meta_value] = array(
+                                'image' => $obj->Images,
+                                'video' => $obj->Videos,
+                                'audio' => $obj->Audio,
+                                'album' => $obj->Albums,
+                            );
+                        }
 
-            foreach ($result as $obj) {
+                        foreach ($formatted as $user => $obj) {
+                            bp_update_user_meta($user, 'bp_media_count', $obj);
+                        }
+                        return true;
+                    }
 
-                $count = array(
-                    'images' => isset($obj->Images) ? $obj->Images : 0,
-                    'videos' => isset($obj->Videos) ? $obj->Videos : 0,
-                    'audio' => isset($obj->Audio) ? $obj->Audio : 0,
-                    'albums' => isset($obj->Albums) ? $obj->Albums : 0
-                );
-                bp_update_user_meta($obj->post_author, 'bp_media_count', $count);
-            }
-            return true;
-        }
+                    /* Multisite Save Options - http://wordpress.stackexchange.com/questions/64968/settings-api-in-multisite-missing-update-message#answer-72503 */
 
-        /* Multisite Save Options - http://wordpress.stackexchange.com/questions/64968/settings-api-in-multisite-missing-update-message#answer-72503 */
+                    /**
+                     *
+                     * @global type $bp_media_admin
+                     */
+                    public function save_multisite_options() {
+                        global $bp_media_admin;
+                        if (isset($_POST['refresh-count'])) {
+                            $bp_media_admin->update_count();
+                        }
+                        do_action('bp_media_sanitize_settings', $_POST);
 
-        /**
-         * 
-         * @global type $bp_media_admin
-         */
-        public function save_multisite_options() {
-            global $bp_media_admin;
-            if (isset($_POST['refresh-count'])) {
-                $bp_media_admin->update_count();
-            }
-            do_action('bp_media_sanitize_settings', $_POST);
+                        if (isset($_POST['bp_media_options'])) {
+                            bp_update_option('bp_media_options', $_POST['bp_media_options']);
+//
+//                // redirect to settings page in network
+                            wp_redirect(
+                                    add_query_arg(
+                                            array('page' => 'bp-media-settings', 'updated' => 'true'), (is_multisite() ? network_admin_url('admin.php') : admin_url('admin.php'))
+                                    )
+                            );
+                            exit;
+                        }
+                    }
 
-            if (isset($_POST['bp_media_options'])) {
-                bp_update_option('bp_media_options', $_POST['bp_media_options']);
+                    /* Admin Sidebar */
 
-                // redirect to settings page in network
-                wp_redirect(
-                        add_query_arg(
-                                array('page' => 'bp-media-settings', 'updated' => 'true'), (is_multisite() ? network_admin_url('admin.php') : admin_url('admin.php'))
-                        )
-                );
-                exit;
-            }
-        }
+                    /**
+                     *
+                     * @global type $bp_media
+                     */
+                    public function admin_sidebar() {
+                        $current_user = wp_get_current_user();
 
-        /* Admin Sidebar */
-
-        /**
-         * 
-         * @global type $bp_media
-         */
-        public function admin_sidebar() {
-            $current_user = wp_get_current_user();
-
-            $message = sprintf(__('I use @buddypressmedia http://goo.gl/8Upmv on %s', BP_MEDIA_TXT_DOMAIN),home_url());
-            $addons = '<label for="bp-media-add-linkback"><input' . checked(bp_get_option('bp_media_add_linkback', false), true, false) . ' type="checkbox" name="bp-media-add-linkback" value="1" id="bp-media-add-linkback"/> ' . __('Add link to footer', BP_MEDIA_TXT_DOMAIN) . '</label>
+                        $message = sprintf(__('I use @buddypressmedia http://goo.gl/8Upmv on %s', BP_MEDIA_TXT_DOMAIN), home_url());
+                        $addons = '<label for="bp-media-add-linkback"><input' . checked(bp_get_option('bp_media_add_linkback', false), true, false) . ' type="checkbox" name="bp-media-add-linkback" value="1" id="bp-media-add-linkback"/> ' . __('Add link to footer', BP_MEDIA_TXT_DOMAIN) . '</label>
                        <ul>
                            <li><a href="http://twitter.com/home/?status=' . $message . '" target= "_blank"><input type="button" value="' . __('Tweet', BP_MEDIA_TXT_DOMAIN) . '" class="button button-tweet"></a></li>
                            <li><a href="http://wordpress.org/support/view/plugin-reviews/buddypress-media?rate=5#postform" target= "_blank"><input type="button" value="' . __('Rate on WordPress.org', BP_MEDIA_TXT_DOMAIN) . '" class="button button-rating"></a></li>
                        </ul>';
-            new BPMediaAdminWidget('spread-the-word', __('Spread the Word', BP_MEDIA_TXT_DOMAIN), $addons);
+                        new BPMediaAdminWidget('spread-the-word', __('Spread the Word', BP_MEDIA_TXT_DOMAIN), $addons);
 
-            $donate = '<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+                        $donate = '<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
                            <!-- Identify your business so that you can collect the payments. -->
                            <input type="hidden" name="business"
                            value="paypal@rtcamp.com">
@@ -308,21 +341,19 @@ if (!class_exists('BPMediaAdmin')) {
                            <input type="hidden" name="cmd" value="_donations">
                            <!-- Specify details about the contribution -->
                            <input type="hidden" name="item_name" value="BuddyPress Media">
-                           <input type="text" name="amount" size="3">
-                           <label><b>' . __('USD', BP_MEDIA_TXT_DOMAIN) . '</b></label>  <br/>                                   
+                           <label><b>' . __('USD', BP_MEDIA_TXT_DOMAIN) . '</b></label>
+						   <input type="text" name="amount" size="3">
                            <input type="hidden" name="currency_code" value="USD">
                            <!-- Display the payment button. -->
                            <input type="hidden" name="cpp_header_image" value="' . BP_MEDIA_URL . 'app/assets/img/rtcamp-logo.png">
-                           <input type="image" name="submit" border="0"
-                           src="https://www.paypal.com/en_US/i/btn/btn_donateCC_LG.gif"
+                           <input type="image" id="rt-donate-button" name="submit" border="0"
+                           src="' . BP_MEDIA_URL . 'app/assets/img/paypal-donate-button.png"
                            alt="PayPal - The safer, easier way to pay online">
-                           <img alt="" border="0" width="1" height="1"
-                           src="https://www.paypal.com/en_US/i/scr/pixel.gif" >
                        </form>';
-            new BPMediaAdminWidget('donate', __('Donate', BP_MEDIA_TXT_DOMAIN), $donate);
+                        new BPMediaAdminWidget('donate', __('Donate', BP_MEDIA_TXT_DOMAIN), $donate);
 
-            $branding = '<form action="http://rtcamp.us1.list-manage1.com/subscribe/post?u=85b65c9c71e2ba3fab8cb1950&amp;id=9e8ded4470" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
-                                    <div class="mc-field-group">                                    
+                        $branding = '<form action="http://rtcamp.us1.list-manage1.com/subscribe/post?u=85b65c9c71e2ba3fab8cb1950&amp;id=9e8ded4470" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+                                    <div class="mc-field-group">
                                     <input type="email" value="' . $current_user->user_email . '" name="EMAIL" placeholder="Email" class="required email" id="mce-EMAIL">
                                     <input style="display:none;" type="checkbox" checked="checked" value="1" name="group[1721][1]" id="mce-group[1721]-1721-0"><label for="mce-group[1721]-1721-0">
                                     <div id="mce-responses" class="clear">
@@ -337,22 +368,38 @@ if (!class_exists('BPMediaAdmin')) {
                             <li><a href="' . sprintf('%s', 'https://twitter.com/rtcamp/') . '"  title="' . __('Follow us on Twitter', BP_MEDIA_TXT_DOMAIN) . '" class="bp-media-twitter bp-media-social">' . __('Twitter', BP_MEDIA_TXT_DOMAIN) . '</a></li>
                             <li><a href="' . sprintf('%s', 'http://feeds.feedburner.com/rtcamp/') . '"  title="' . __('Subscribe to our feeds', BP_MEDIA_TXT_DOMAIN) . '" class="bp-media-rss bp-media-social">' . __('RSS Feed', BP_MEDIA_TXT_DOMAIN) . '</a></li>
                         </ul>';
-            new BPMediaAdminWidget('branding', __('Subscribe', BP_MEDIA_TXT_DOMAIN), $branding);
+                        new BPMediaAdminWidget('branding', __('Subscribe', BP_MEDIA_TXT_DOMAIN), $branding);
 
-            $news = '<img src ="' . admin_url('/images/wpspin_light.gif') . '" /> Loading...';
-            new BPMediaAdminWidget('latest-news', __('Latest News', BP_MEDIA_TXT_DOMAIN), $news);
-        }
+                        $news = '<img src ="' . admin_url('/images/wpspin_light.gif') . '" /> Loading...';
+                        new BPMediaAdminWidget('latest-news', __('Latest News', BP_MEDIA_TXT_DOMAIN), $news);
+                    }
 
-        public function linkback() {
-            if (isset($_POST['linkback']) && $_POST['linkback']) {
-                return bp_update_option('bp_media_add_linkback', true);
-            } else {
-                return bp_update_option('bp_media_add_linkback', false);
+                    public function linkback() {
+                        if (isset($_POST['linkback']) && $_POST['linkback']) {
+                            return bp_update_option('bp_media_add_linkback', true);
+                        } else {
+                            return bp_update_option('bp_media_add_linkback', false);
+                        }
+                        die;
+                    }
+
+                    public function convert_videos_mailchimp_send() {
+                        if ($_POST['interested'] == 'Yes' && !empty($_POST['choice'])) {
+                            wp_remote_get(add_query_arg( array('bp-media-convert-videos-form' => 1, 'choice' => $_POST['choice'], 'url'=> urlencode($_POST['url']), 'email' => $_POST['email']),'http://rtcamp.com/'));
+                        } else {
+                            bp_update_option('bp-media-survey', 0);
+                        }
+                        echo 'Thank you for your time.';
+                        die;
+                    }
+                    
+                    public function video_transcoding_survey_response(){
+                        if ( isset($_GET['survey-done']) && ($_GET['survey-done'] == md5('survey-done')) ) {
+                            bp_update_option('bp-media-survey', 0);
+                        }
+                    }
+
+                }
+
             }
-            die;
-        }
-
-    }
-
-}
             ?>

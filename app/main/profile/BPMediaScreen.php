@@ -119,8 +119,8 @@ class BPMediaScreen {
      *
      * @global type $bp_media
      */
-    private function screen_title() {
-        printf(__('%s List Page', BP_MEDIA_TXT_DOMAIN), $this->slug);
+    function screen_title() {
+        printf(__('All %s', BP_MEDIA_TXT_DOMAIN), ucfirst($this->slug));
     }
 
     /**
@@ -129,7 +129,7 @@ class BPMediaScreen {
      */
     public function screen() {
         $editslug = 'BP_MEDIA_' . $this->media_const . '_EDIT_SLUG';
-        $entryslug = 'BP_MEDIA_' . $this->media_const . '_ENTRY_SLUG';
+        $entryslug = 'BP_MEDIA_' . $this->media_const . '_VIEW_SLUG';
 
         global $bp;
 
@@ -150,11 +150,11 @@ class BPMediaScreen {
                     break;
                 default:
                     $this->set_query();
-                    add_action('bp_template_content', array($this, 'screen_content'));
+                    $this->template_actions('screen');
             }
         } else {
             $this->set_query();
-            add_action('bp_template_content', array($this, 'screen_content'));
+            $this->template_actions('screen');
         }
         $this->template->loader();
     }
@@ -172,23 +172,23 @@ class BPMediaScreen {
      * @global type $bp_media_albums_query
      */
     function screen_content() {
-        global $bp_media_query;
-        $total_post = 10;
-        $total_post = get_option('posts_per_page');
+        global $bp_media_query, $bp_media;
+
+
         $this->set_query();
 
+
         $this->hook_before();
+
         if ($bp_media_query && $bp_media_query->have_posts()):
             echo '<ul id="bp-media-list" class="bp-media-gallery item-list">';
             if (bp_is_my_profile() || BPMediaGroupLoader::can_upload()) {
                 echo '<li>';
                 BPMediaUploadScreen::upload_screen_content();
                 echo '</li>';
-                $total_post--;
             }
-            while ($bp_media_query->have_posts() && $total_post>0) : $bp_media_query->the_post();
+            while ($bp_media_query->have_posts() ) : $bp_media_query->the_post();
                 $this->template->the_content();
-                $total_post--;
             endwhile;
             echo '</ul>';
             $this->template->show_more();
@@ -211,7 +211,7 @@ class BPMediaScreen {
     function entry_screen() {
 
         global $bp, $bp_media_current_entry;
-        $entryslug = 'BP_MEDIA_' . $this->media_const . '_ENTRY_SLUG';
+        $entryslug = 'BP_MEDIA_' . $this->media_const . '_VIEW_SLUG';
         if (!$bp->action_variables[0] == constant($entryslug))
             return false;
         try {
@@ -249,7 +249,7 @@ class BPMediaScreen {
      */
     function entry_screen_content() {
         global $bp, $bp_media_current_entry;
-        $entryslug = 'BP_MEDIA_' . $this->media_const . '_ENTRY_SLUG';
+        $entryslug = 'BP_MEDIA_' . $this->media_const . '_VIEW_SLUG';
         $this->hook_before();
         if (!$bp->action_variables[0] == constant($entryslug))
             return false;
@@ -321,16 +321,13 @@ class BPMediaScreen {
             <input id="bp-media-upload-input-title" type="text" name="bp_media_title" class="settings-input"
                    maxlength="<?php echo max(array($bp_media_default_excerpts['single_entry_title'], $bp_media_default_excerpts['activity_entry_title'])) ?>"
                    value="<?php echo $bp_media_current_entry->get_title(); ?>" />
-        <?php if ($bp_media_current_entry->get_type() != 'album') { ?>
-                <label for="bp-media-upload-input-description">
-                       <?php printf(__('%s Description', BP_MEDIA_TXT_DOMAIN), ucfirst($this->media_type)); ?>
-                </label>
-                <input id="bp-media-upload-input-description" type="text" name="bp_media_description" class="settings-input"
-                       maxlength="<?php echo max(array($bp_media_default_excerpts['single_entry_description'], $bp_media_default_excerpts['activity_entry_description'])) ?>"
-                       value="<?php echo $bp_media_current_entry->get_content(); ?>" />
-                    <?php }
-                    do_action('bp_media_add_media_fields', $this->media_type);
-                    ?>
+            <label for="bp-media-upload-input-description">
+                    <?php printf(__('%s Description', BP_MEDIA_TXT_DOMAIN), ucfirst($this->media_type)); ?>
+            </label>
+            <input id="bp-media-upload-input-description" type="text" name="bp_media_description" class="settings-input"
+                    maxlength="<?php echo max(array($bp_media_default_excerpts['single_entry_description'], $bp_media_default_excerpts['activity_entry_description'])) ?>"
+                    value="<?php echo $bp_media_current_entry->get_content(); ?>" />
+            <?php do_action('bp_media_add_media_fields', $this->media_type); ?>
             <div class="submit">
                 <input type="submit" class="auto" value="<?php _e('Update', BP_MEDIA_TXT_DOMAIN); ?>" />
                 <a href="<?php echo $bp_media_current_entry->get_url(); ?>" class="button" title="<?php _e('Back to Media File', BP_MEDIA_TXT_DOMAIN); ?>">
@@ -419,8 +416,16 @@ class BPMediaScreen {
      * @global type $bp_media_query
      */
     public function set_query() {
-        global $bp, $bp_media_posts_per_page, $bp_media_query;
-        switch ($bp->current_action) {
+        global $bp, $bp_media_query;
+		if(bp_is_current_component('groups')){
+			global $bp_media;
+			$def_tab=$bp_media->defaults_tab();
+			$type_var = isset($bp->action_variables[0])?$bp->action_variables[0]:constant('BP_MEDIA_'.strtoupper($def_tab).'_SLUG');
+		}else{
+
+			$type_var = $bp->current_action;
+		}
+        switch ($type_var) {
             case BP_MEDIA_IMAGES_SLUG:
                 $type = 'image';
                 break;
@@ -433,26 +438,10 @@ class BPMediaScreen {
             default :
                 $type = null;
         }
-        if (isset($bp->action_variables) && is_array($bp->action_variables) && isset($bp->action_variables[0]) && $bp->action_variables[0] == 'page' && isset($bp->action_variables[1]) && is_numeric($bp->action_variables[1])) {
-            $paged = $bp->action_variables[1];
-        } else {
-            $paged = 1;
-        }
-        if ($type) {
-            $args = array(
-                'post_type' => 'attachment',
-                'post_status' => 'any',
-                'post_mime_type' => $type,
-                'author' => $bp->displayed_user->id,
-                'meta_key' => 'bp-media-key',
-                'meta_value' => $bp->displayed_user->id,
-                'meta_compare' => '=',
-                'paged' => $paged,
-                'posts_per_page' => $bp_media_posts_per_page
-            );
 
-            $bp_media_query = new WP_Query($args);
-        }
+            $query = new BPMediaQuery();
+			$args = $query->init($type);
+			$bp_media_query = new WP_Query($args);
     }
 
 }

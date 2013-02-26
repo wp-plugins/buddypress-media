@@ -226,8 +226,8 @@ class BuddyPressMedia {
 		if ( ! defined( 'BP_MEDIA_IMAGES_SLUG' ) )
 			define( 'BP_MEDIA_IMAGES_SLUG', 'photos' );
 
-		if ( ! defined( 'BP_MEDIA_IMAGES_ENTRY_SLUG' ) )
-			define( 'BP_MEDIA_IMAGES_ENTRY_SLUG', 'view' );
+		if ( ! defined( 'BP_MEDIA_IMAGES_VIEW_SLUG' ) )
+			define( 'BP_MEDIA_IMAGES_VIEW_SLUG', 'view' );
 
 		if ( ! defined( 'BP_MEDIA_IMAGES_EDIT_SLUG' ) )
 			define( 'BP_MEDIA_IMAGES_EDIT_SLUG', 'edit' );
@@ -236,8 +236,8 @@ class BuddyPressMedia {
 		if ( ! defined( 'BP_MEDIA_VIDEOS_SLUG' ) )
 			define( 'BP_MEDIA_VIDEOS_SLUG', 'videos' );
 
-		if ( ! defined( 'BP_MEDIA_VIDEOS_ENTRY_SLUG' ) )
-			define( 'BP_MEDIA_VIDEOS_ENTRY_SLUG', 'watch' );
+		if ( ! defined( 'BP_MEDIA_VIDEOS_VIEW_SLUG' ) )
+			define( 'BP_MEDIA_VIDEOS_VIEW_SLUG', 'watch' );
 
 		if ( ! defined( 'BP_MEDIA_VIDEOS_EDIT_SLUG' ) )
 			define( 'BP_MEDIA_VIDEOS_EDIT_SLUG', 'edit' );
@@ -246,8 +246,8 @@ class BuddyPressMedia {
 		if ( ! defined( 'BP_MEDIA_AUDIO_SLUG' ) )
 			define( 'BP_MEDIA_AUDIO_SLUG', 'music' );
 
-		if ( ! defined( 'BP_MEDIA_AUDIO_ENTRY_SLUG' ) )
-			define( 'BP_MEDIA_AUDIO_ENTRY_SLUG', 'listen' );
+		if ( ! defined( 'BP_MEDIA_AUDIO_VIEW_SLUG' ) )
+			define( 'BP_MEDIA_AUDIO_VIEW_SLUG', 'listen' );
 
 		if ( ! defined( 'BP_MEDIA_AUDIO_EDIT_SLUG' ) )
 			define( 'BP_MEDIA_AUDIO_EDIT_SLUG', 'edit' );
@@ -256,11 +256,15 @@ class BuddyPressMedia {
 		if ( ! defined( 'BP_MEDIA_ALBUMS_SLUG' ) )
 			define( 'BP_MEDIA_ALBUMS_SLUG', 'albums' );
 
-		if ( ! defined( 'BP_MEDIA_ALBUMS_ENTRY_SLUG' ) )
-			define( 'BP_MEDIA_ALBUMS_ENTRY_SLUG', 'list' );
+		if ( ! defined( 'BP_MEDIA_ALBUMS_VIEW_SLUG' ) )
+			define( 'BP_MEDIA_ALBUMS_VIEW_SLUG', 'list' );
 
 		if ( ! defined( 'BP_MEDIA_ALBUMS_EDIT_SLUG' ) )
 			define( 'BP_MEDIA_ALBUMS_EDIT_SLUG', 'edit' );
+
+		/* Settings slug */
+		if ( ! defined( 'BP_MEDIA_USER_SETTINGS_SLUG' ) )
+			define( 'BP_MEDIA_USER_SETTINGS_SLUG', 'privacy' );
 
 		/* UI Labels loaded via text domain, can be translated */
 		if ( ! defined( 'BP_MEDIA_LABEL' ) )
@@ -269,6 +273,9 @@ class BuddyPressMedia {
 
 		if ( ! defined( 'BP_MEDIA_LABEL_SINGULAR' ) )
 			define( 'BP_MEDIA_LABEL_SINGULAR', __( 'Media',
+					$this->text_domain ) );
+		if ( ! defined( 'BP_MEDIA_USER_SETTINGS_LABEL' ) )
+			define( 'BP_MEDIA_USER_SETTINGS_LABEL', __( 'Privacy',
 					$this->text_domain ) );
 
 		if ( ! defined( 'BP_MEDIA_IMAGES_LABEL' ) )
@@ -343,9 +350,27 @@ class BuddyPressMedia {
 			 * Load accessory functions
 			 */
 //			new BPMediaActivity();
-			new BPMediaFilters();
-			new BPMediaActions();
-			new BPMediaFunction();
+			$class_construct = array(
+//				'activity'      => false,
+				'filters'	=> false,
+				'actions'	=> false,
+				'function'	=> false,
+				'privacy'	=>false,
+			);
+			$class_construct = apply_filters('bpmedia_class_construct',$class_construct);
+
+			foreach ( $class_construct as $classname=>$global_scope ) {
+				$class = 'BPMedia' . ucfirst( $classname );
+				if ( class_exists( $class ) ) {
+					if($global_scope==true){
+						global ${'bp_media_'.$classname};
+						${'bp_media_'.$classname} = new $class();
+					}else{
+						new $class();
+					}
+				}
+			}
+
 		}
 
 		/**
@@ -514,6 +539,8 @@ class BuddyPressMedia {
 					);
 			}
 		}
+
+		BPMediaPrivacy::install();
 	}
 
 	/**
@@ -556,19 +583,30 @@ class BuddyPressMedia {
 			'upload' => true
 		);
 		if ( array_key_exists( 'images_enabled', $options ) ) {
-			if ( $options[ 'images_enabled' ] == 1 )
+			if ( $options[ 'images_enabled' ] == 1 ){
 				$enabled[ 'image' ] = true;
+			}
 		}
 		if ( array_key_exists( 'videos_enabled', $options ) ) {
-			if ( $options[ 'videos_enabled' ] == 1 )
+			if ( $options[ 'videos_enabled' ] == 1 ){
 				$enabled[ 'video' ] = true;
+			}
 		}
 		if ( array_key_exists( 'audio_enabled', $options ) ) {
-			if ( $options[ 'audio_enabled' ] == 1 )
+			if ( $options[ 'audio_enabled' ] == 1 ){
 				$enabled[ 'audio' ] = true;
+			}
 		}
 
 		return $enabled;
+	}
+
+	function default_count(){
+		$count = $this->posts_per_page;
+		if(array_key_exists('default_count',$this->options)){
+			$count = $this->options['default_count'];
+		}
+		return (!$count)?10:$count;
 	}
 
 	function default_tab(){
@@ -590,6 +628,7 @@ class BuddyPressMedia {
 		return $defaults_tab;
 	}
 
+	/*
 	static function get_wall_album( $group_id = false ) {
 		global $wpdb;
 		$group_id = ( ! $group_id) ? '1' : $group_id;
@@ -599,13 +638,14 @@ class BuddyPressMedia {
 			LIKE '{$album_name}' AND ps.post_type='bp_media_album' AND
 				pm.meta_key='bp-media-key' AND pm.meta_value ='{$group_id}'";
 		$wall_albums = $wpdb->get_results( $query, ARRAY_A );
-
 		if ( count( $wall_albums ) > 1 ) {
 			return BuddyPressMedia::merge_duplicate_wall_albums( $wall_albums );
 		} elseif($wall_albums) {
 			return $wall_albums[ 0 ][ 'ID' ];
 		}
 	}
+	 *
+	 */
 
 	static function merge_duplicate_wall_albums( $wall_albums ) {
 		global $wpdb;
