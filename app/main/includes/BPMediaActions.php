@@ -20,11 +20,11 @@ class BPMediaActions {
 		add_action( 'bp_activity_entry_meta', array( $this, 'action_buttons' ) );
 		add_action( 'bp_media_before_delete_media', 'BPMediaActions::delete_media_handler' );
 		add_action( 'bp_media_after_add_album', array( $this, 'album_create_activity' ) );
-		add_action( 'bp_media_after_add_album', array( $this, 'update_count' ), 99, 2 );
+		add_action( 'bp_media_after_add_album', array( $this, 'update_count' ) ,999 );
 		add_action( 'bp_media_album_updated', 'BPMediaActions::album_activity_update' );
-		add_action( 'bp_media_album_updated', array( $this, 'update_count' ), 99, 2 );
-		add_action( 'bp_media_after_edit_album', array( $this, 'update_count' ), 99, 2 );
-		add_action( 'bp_media_after_delete_album', array( $this, 'update_count' ), 99, 1 );
+		add_action( 'bp_media_album_updated', array( $this, 'update_count' ) ,999 );
+		add_action( 'bp_media_after_edit_album', array( $this, 'update_count' ) ,999 );
+		add_action( 'bp_media_after_delete_album', array( $this, 'update_count' ) ,999 );
 		add_action( 'bp_media_after_delete_media', array( $this, 'album_activity_sync' ) );
 		add_action( 'bp_media_after_add_media', 'BPMediaActions::activity_create_after_add_media', 10, 4 );
 		add_action( 'wp_ajax_bp_media_load_more', array( $this, 'load_more' ) );
@@ -32,10 +32,10 @@ class BPMediaActions {
 		add_action( 'wp_ajax_bp_media_set_album_cover', array( $this, 'set_album_cover' ) );
 		add_action( 'delete_attachment', array( $this, 'delete_attachment_handler' ) );
 		add_action( 'wp_ajax_bp_media_add_album', array( $this, 'add_album' ) );
-		add_action( 'bp_media_after_privacy_install', array( $this, 'update_count' ) );
-		add_action( 'bp_media_no_object_after_add_media', array( $this, 'update_count' ), 99, 2 );
-		add_action( 'bp_media_after_update_media', array( $this, 'update_count' ), 99, 2 );
-		add_action( 'bp_media_after_delete_media', array( $this, 'update_count' ), 99, 1 );
+		add_action( 'bp_media_after_privacy_install', array( $this, 'update_count' ) ,999 );
+		add_action( 'bp_media_after_add_media', array( $this, 'update_count' ) ,999 );
+		add_action( 'bp_media_after_update_media', array( $this, 'update_count' ) ,999 );
+		add_action( 'bp_media_after_delete_media', array( $this, 'update_count' ) ,999);
 		$linkback = bp_get_option( 'bp_media_add_linkback', false );
 		if ( $linkback )
 			add_action( 'bp_footer', array( $this, 'footer' ) );
@@ -151,8 +151,8 @@ class BPMediaActions {
 	function enqueue_scripts_styles() {
 
 		wp_enqueue_script( 'jquery-ui-tabs' );
-		wp_enqueue_script( 'bp-media-mejs', BP_MEDIA_URL . 'lib/media-element/mediaelement-and-player.min.js', '', '2.6.2' );
-		wp_enqueue_script( 'bp-media-default', BP_MEDIA_URL . 'app/assets/js/main.js', '', '2.6.2' );
+		wp_enqueue_script( 'bp-media-mejs', BP_MEDIA_URL . 'lib/media-element/mediaelement-and-player.min.js', '', BP_MEDIA_VERSION );
+		wp_enqueue_script( 'bp-media-default', BP_MEDIA_URL . 'app/assets/js/main.js', '', BP_MEDIA_VERSION );
 
 		global $bp;
 		$cur_group_id = NULL;
@@ -169,8 +169,8 @@ class BPMediaActions {
 		);
 
 		wp_localize_script( 'bp-media-default', 'bp_media_vars', $bp_media_vars );
-		wp_enqueue_style( 'bp-media-mecss', BP_MEDIA_URL . 'lib/media-element/mediaelementplayer.min.css', '', '2.6.2' );
-		wp_enqueue_style( 'bp-media-default', BP_MEDIA_URL . 'app/assets/css/main.css', '', '2.6.2' );
+		wp_enqueue_style( 'bp-media-mecss', BP_MEDIA_URL . 'lib/media-element/mediaelementplayer.min.css', '', BP_MEDIA_VERSION );
+		wp_enqueue_style( 'bp-media-default', BP_MEDIA_URL . 'app/assets/css/main.css', '', BP_MEDIA_VERSION );
 	}
 
 	/**
@@ -352,39 +352,20 @@ class BPMediaActions {
 		}
 		$count = bp_get_user_meta( $user, 'bp_media_count', true );
 		if ( ! $count ) {
-			$bp_media_count = array( array( 'images' => 0, 'videos' => 0, 'audio' => 0, 'albums' => 0 ) );
+			$bp_media_count = array(
+				0=>array('images' => 0, 'videos' => 0, 'audio' => 0, 'albums' => 0 ),
+				2=>array('images' => 0, 'videos' => 0, 'audio' => 0, 'albums' => 0 ),
+				4=>array('images' => 0, 'videos' => 0, 'audio' => 0, 'albums' => 0 ),
+				6=>array('images' => 0, 'videos' => 0, 'audio' => 0, 'albums' => 0 ),
+					);
 			bp_update_user_meta( $user, 'bp_media_count', $bp_media_count );
-			$bp_media_count = bp_get_user_meta( $user, 'bp_media_count', true );
 		} else {
 			$total = array(
-				0 => array(
 					'images' => 0,
 					'videos' => 0,
 					'audio' => 0,
 					'albums' => 0,
 					'total' => 0
-				),
-				2 => array(
-					'images' => 0,
-					'videos' => 0,
-					'audio' => 0,
-					'albums' => 0,
-					'total' => 0
-				),
-				4 => array(
-					'images' => 0,
-					'videos' => 0,
-					'audio' => 0,
-					'albums' => 0,
-					'total' => 0
-				),
-				6 => array(
-					'images' => 0,
-					'videos' => 0,
-					'audio' => 0,
-					'albums' => 0,
-					'total' => 0
-				),
 			);
 			$total_count = 0;
 			if ( isset( $count ) && is_array( $count ) && count( $count ) > 0 ) {
@@ -423,7 +404,8 @@ class BPMediaActions {
 		return true;
 	}
 
-	public function update_count() {
+	public function update_count($object) {
+
 		global $bp;
 		$user_id = $bp->loggedin_user->id;
 		global $wpdb;
@@ -447,7 +429,7 @@ class BPMediaActions {
 		if ( ! is_array( $result ) )
 			return false;
 		foreach ( $result as $level => $obj ) {
-			$formatted[ $level ] = array(
+			$formatted[ $level*2 ] = array(
 				'image' => $obj->Images,
 				'video' => $obj->Videos,
 				'audio' => $obj->Audio,
@@ -492,7 +474,7 @@ class BPMediaActions {
 				'multi_selection' => true,
 				'multipart_params' => apply_filters( 'bp_media_multipart_params_filter', array( 'action' => 'wp_handle_upload' ) )
 			);
-			wp_enqueue_script( 'bp-media-activity-uploader', BP_MEDIA_URL . 'app/assets/js/bp-media-activity-uploader.js', array( 'plupload', 'plupload-html5', 'plupload-flash', 'plupload-silverlight', 'plupload-html4', 'plupload-handlers' ), '2.6.2' );
+			wp_enqueue_script( 'bp-media-activity-uploader', BP_MEDIA_URL . 'app/assets/js/bp-media-activity-uploader.js', array( 'plupload', 'plupload-html5', 'plupload-flash', 'plupload-silverlight', 'plupload-html4', 'plupload-handlers' ), BP_MEDIA_VERSION );
 			wp_localize_script( 'bp-media-activity-uploader', 'bp_media_uploader_params', $params );
 			wp_localize_script( 'bp-media-activity-uploader', 'activity_ajax_url', admin_url( 'admin-ajax.php' ) );
 		} elseif ( in_array( bp_current_action(), array( BP_MEDIA_IMAGES_SLUG, BP_MEDIA_VIDEOS_SLUG, BP_MEDIA_AUDIO_SLUG, BP_MEDIA_SLUG, BP_MEDIA_ALBUMS_SLUG ) ) ) {
@@ -512,10 +494,10 @@ class BPMediaActions {
 				'multi_selection' => true,
 				'multipart_params' => apply_filters( 'bp_media_multipart_params_filter', array( 'action' => 'wp_handle_upload' ) )
 			);
-			wp_enqueue_script( 'bp-media-uploader', BP_MEDIA_URL . 'app/assets/js/bp-media-uploader.js', array( 'plupload', 'plupload-html5', 'plupload-flash', 'plupload-silverlight', 'plupload-html4', 'plupload-handlers' ), '2.6.2' );
+			wp_enqueue_script( 'bp-media-uploader', BP_MEDIA_URL . 'app/assets/js/bp-media-uploader.js', array( 'plupload', 'plupload-html5', 'plupload-flash', 'plupload-silverlight', 'plupload-html4', 'plupload-handlers' ), BP_MEDIA_VERSION );
 			wp_localize_script( 'bp-media-uploader', 'bp_media_uploader_params', $params );
 		}
-		wp_enqueue_style( 'bp-media-default', BP_MEDIA_URL . 'app/assets/css/main.css', '', '2.6.2' );
+		wp_enqueue_style( 'bp-media-default', BP_MEDIA_URL . 'app/assets/css/main.css', '', BP_MEDIA_VERSION );
 	}
 
 //This is used only on the uploads page so its added as action in the screens function of upload page.
