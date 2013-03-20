@@ -17,6 +17,9 @@ class BPMediaTemplate {
      */
     function upload_form_multiple() {
         global $bp_media_current_album;
+		$post_max_size = ini_get('post_max_size');
+        $upload_max_filesize = ini_get('upload_max_filesize');
+        $memory_limit = ini_get('memory_limit');
         $post_wall = __('Wall Posts', BP_MEDIA_TXT_DOMAIN); ?>
         <div id="bp-media-upload-ui" class="hide-if-no-js drag-drop">
             <div id="drag-drop-area">
@@ -61,7 +64,7 @@ class BPMediaTemplate {
                         } else {
                             $album->add_album($post_wall, bp_loggedin_user_id());
                         }
-                        echo '<option value="' . $album->get_id() . '" selected="selected">' . $album->get_title()->post_title . '</option>';
+                        echo '<option value="' . $album->get_id() . '" selected="selected">' . $album->get_title() . '</option>';
                     }
                     echo '<option id="create-new" value="create_new" >' . __('+ Create New Album', BP_MEDIA_TXT_DOMAIN) . '</option>';
                     ?>

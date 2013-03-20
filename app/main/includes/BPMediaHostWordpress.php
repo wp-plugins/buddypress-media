@@ -49,7 +49,7 @@ class BPMediaHostWordpress {
 	 * @return boolean
 	 * @throws Exception
 	 */
-	function init( $media_id = '' ) {
+	function init( $media_id = '') {
 		if ( is_object( $media_id ) ) {
 			$media = $media_id;
 		} else {
@@ -65,12 +65,14 @@ class BPMediaHostWordpress {
 			$this->type = $result[ 0 ][ 0 ];
 		else
 			return false;
-//		$required_access = BPMediaPrivacy::required_access($media->ID);
-//		$current_access = BPMediaPrivacy::current_access($media->ID);
-//		$has_access = BPMediaPrivacy::has_access($media->ID);
+
+			$required_access = BPMediaPrivacy::required_access($media->ID);
+			$current_access = BPMediaPrivacy::current_access($media->ID);
+			$has_access = BPMediaPrivacy::has_access($media->ID);
+
 
 		global $bp;
-//		$messages = BPMediaPrivacy::get_messages( $this->type,$bp->displayed_user->fullname );
+		$messages = BPMediaPrivacy::get_messages( $this->type,$bp->displayed_user->fullname );
 		$this->id = $media->ID;
 		$meta_key = get_post_meta( $this->id, 'bp-media-key', true );
 
@@ -82,11 +84,11 @@ class BPMediaHostWordpress {
 		 * we use it as negative value in the bp-media-key meta key
 		 */
 		$this->group_id = $meta_key < 0 ? -$meta_key : 0;
-//		if($this->group_id<=0){
-//			if(!$has_access){
-//				//throw new Exception($messages[$required_access]);
-//			}
-//		}
+		if($this->group_id<=0){
+			if(!$has_access){
+				throw new Exception('<img src="'.BP_MEDIA_URL.'app/assets/img/private.png" title="'. $messages[$required_access] . '" />');
+			}
+		}
 
 		$this->description = $media->post_content;
 		$this->name = $media->post_title;
@@ -245,6 +247,22 @@ class BPMediaHostWordpress {
 		return $attachment_id;
 	}
 
+	function get_media_thumbnail($size='thumbnail'){
+		$thumb = '';
+		if(in_array($this->type, array('image','video','audio'))){
+				if ( $this->thumbnail_id ) {
+					$medium_array = image_downsize( $this->thumbnail_id, $size );
+					$thumb_url = $medium_array[ 0 ];
+				} else {
+					$thumb_url = BP_MEDIA_URL . 'app/assets/img/'.$this->type.'_thumb.png';
+				}
+				$thumb = apply_filters( 'bp_media_video_thumb', $thumb_url, $this->thumbnail_id, $this->type );
+				return $thumb;
+		}
+		return false;
+
+	}
+
 	/**
 	 * Fetches the content of the activity of media upload based on its type
 	 *
@@ -360,7 +378,7 @@ class BPMediaHostWordpress {
 				return false;
 		}
 		$content .= '</div>';
-		$content .= '<div class="bp_media_description">' . wp_html_excerpt( $this->description, $bp_media_default_excerpts[ 'single_entry_description' ] ) . '</div>';
+		$content .= '<div class="bp_media_description">' . nl2br($this->description) . '</div>';
 		return $content;
 	}
 
@@ -390,7 +408,6 @@ class BPMediaHostWordpress {
 	 * @return boolean
 	 */
 	function get_media_gallery_content() {
-		global $bp_media;
 		$attachment = $this->id;
 		switch ( $this->type ) {
 			case 'video' :
@@ -401,7 +418,7 @@ class BPMediaHostWordpress {
 					$thumb_url = BP_MEDIA_URL . 'app/assets/img/video_thumb.png';
 				}
 				?>
-				<li>
+				<li id="bp-media-item-<?php echo $this->id?>">
 					<a href="<?php echo $this->url ?>" title="<?php _e( $this->description, BP_MEDIA_TXT_DOMAIN ); ?>">
 						<img src="<?php echo apply_filters( 'bp_media_video_thumb', $thumb_url, $attachment, $this->type ); ?>" />
 					</a>
@@ -417,11 +434,12 @@ class BPMediaHostWordpress {
 					$thumb_url = BP_MEDIA_URL . 'app/assets/img/audio_thumb.png';
 				}
 				?>
-				<li>
+				<li id="bp-media-item-<?php echo $this->id?>">
 					<a href="<?php echo $this->url ?>" title="<?php _e( $this->description, BP_MEDIA_TXT_DOMAIN ); ?>">
 						<img src="<?php echo $thumb_url ?>" />
 					</a>
 					<h3 title="<?php echo $this->name; ?>"><a href="<?php echo $this->url ?>" title="<?php _e( $this->description, BP_MEDIA_TXT_DOMAIN ); ?>"><?php echo $this->name ?></a></h3>
+					<div class="bp-media-ajax-preloader"></div>
 				</li>
 				<?php
 				break;
@@ -429,11 +447,12 @@ class BPMediaHostWordpress {
 				$medium_array = image_downsize( $attachment, 'thumbnail' );
 				$medium_path = $medium_array[ 0 ];
 				?>
-				<li>
+				<li id="bp-media-item-<?php echo $this->id?>">
 					<a href="<?php echo $this->url ?>" title="<?php echo $this->description ?>">
 						<img src="<?php echo $medium_path ?>" />
 					</a>
 					<h3 title="<?php echo $this->name ?>"><a href="<?php echo $this->url ?>" title="<?php _e( $this->description, BP_MEDIA_TXT_DOMAIN ); ?>"><?php echo $this->name ?></a></h3>
+					<div class="bp-media-ajax-preloader"></div>
 				</li>
 				<?php
 				break;
@@ -490,8 +509,8 @@ class BPMediaHostWordpress {
 												<a href="<?php bp_activity_unfavorite_link(); ?>" class="button unfav bp-secondary-action" title="<?php esc_attr_e( 'Remove Favorite', BP_MEDIA_TXT_DOMAIN ); ?>"><?php _e( 'Remove Favorite', BP_MEDIA_TXT_DOMAIN ) ?></a>
 											<?php endif; ?>
 										<?php endif; ?>
-										<?php if ( bp_activity_user_can_delete() ) bp_activity_delete_link(); ?>
 										<?php do_action( 'bp_activity_entry_meta' ); ?>
+										<?php if ( bp_activity_user_can_delete() ) bp_activity_delete_link(); ?>
 									</div>
 								<?php endif; ?>
 							</div>
@@ -622,13 +641,20 @@ class BPMediaHostWordpress {
 						'in' => $activities[ 0 ]->id
 					) );
 			foreach ( $activities_template->activities as $activity ) {
+                            if (isset($_POST['bp_media_group_id'])) {
+                            $component = $bp->groups->id;
+                            $item_id = $_POST['bp_media_group_id'];
+                        } else {
+                            $component = $bp->activity->id;
+                            $item_id = $this->get_id();
+                        }
 				$args = array(
 					'content' => $this->get_media_activity_content(),
 					'id' => $activity->id,
-					'type' => 'media_upload',
+					'type' => $component,
 					'action' => apply_filters( 'bp_media_added_media', sprintf( __( '%1$s added a %2$s', BP_MEDIA_TXT_DOMAIN ), bp_core_get_userlink( $this->get_author() ), '<a href="' . $this->get_url() . '">' . $this->get_media_activity_type() . '</a>' ) ),
 					'primary_link' => $this->get_url(),
-					'item_id' => $this->get_id(),
+					'item_id' => $item_id,
 					'recorded_time' => $activity->date_recorded,
 					'user_id' => $this->get_author()
 				);
@@ -938,6 +964,10 @@ class BPMediaHostWordpress {
 			}
 		}
 		return $post_id;
+	}
+
+	function get_description(){
+		return $this->description;
 	}
 
 }
