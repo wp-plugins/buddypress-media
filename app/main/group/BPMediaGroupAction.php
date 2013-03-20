@@ -84,7 +84,7 @@ static function bp_media_groups_set_query() {
      * @global WP_Query $bp_media_albums_query
      */
     static function bp_media_groups_albums_set_query() {
-        global $bp, $bp_media_albums_query;
+        global $bp, $bp_media, $bp_media_albums_query;
         if (isset($bp->action_variables) && isset($bp->action_variables[1]) && $bp->action_variables[1] == 'page' && isset($bp->action_variables[2]) && is_numeric($bp->action_variables[2])) {
             $paged = $bp->action_variables[2];
         } else {
@@ -97,7 +97,8 @@ static function bp_media_groups_set_query() {
                 'paged' => $paged,
                 'meta_key' => 'bp-media-key',
                 'meta_value' => -bp_get_current_group_id(),
-                'meta_compare' => '='
+                'meta_compare' => '=',
+                'posts_per_page' => $bp_media->default_count()
             );
             $bp_media_albums_query = new WP_Query($args);
         }
@@ -110,6 +111,7 @@ static function bp_media_groups_set_query() {
      * @return boolean
      */
     static function bp_media_groups_activity_create_after_add_media($media, $hidden = false) {
+        global $bp;
         if (function_exists('bp_activity_add')) {
             if (!is_object($media)) {
                 try {
@@ -122,8 +124,9 @@ static function bp_media_groups_set_query() {
                 'action' => apply_filters('bp_media_added_media', sprintf(__('%1$s added a %2$s', BP_MEDIA_TXT_DOMAIN), bp_core_get_userlink($media->get_author()), '<a href="' . $media->get_url() . '">' . $media->get_media_activity_type() . '</a>')),
                 'content' => $media->get_media_activity_content(),
                 'primary_link' => $media->get_url(),
-                'item_id' => $media->get_id(),
-                'type' => 'media_upload',
+                'component' => $bp->groups->id,
+                'item_id' => $media->group_id,
+                'type' => 'activity_update',
                 'user_id' => $media->get_author()
             );
             $hidden = apply_filters('bp_media_force_hide_activity', $hidden);

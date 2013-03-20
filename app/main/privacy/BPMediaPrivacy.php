@@ -125,8 +125,8 @@ class BPMediaPrivacy {
 				__( '<strong>Public</strong>, Visible to the world', BP_MEDIA_TXT_DOMAIN )
 			)
 		);
-		if(!bp_is_active('friends')){
-			unset($settings[4]);
+		if ( ! bp_is_active( 'friends' ) ) {
+			unset( $settings[ 4 ] );
 		}
 		return $settings;
 	}
@@ -192,8 +192,8 @@ class BPMediaPrivacy {
 			}
 		}
 
-		$default_level= BPMediaPrivacy::default_privacy();
-		if($level == false){
+		$default_level = BPMediaPrivacy::default_privacy();
+		if ( $level == false ) {
 			$level = $default_level;
 		}
 
@@ -205,7 +205,8 @@ class BPMediaPrivacy {
 	function save( $level = 0, $object_id = false ) {
 		if ( $object_id == false )
 			return false;
-		if(!$level)$level = 0;
+		if ( ! $level )
+			$level = 0;
 		if ( ! array_key_exists( $level, BPMediaPrivacy::get_settings() ) )
 			$level = 0;
 
@@ -218,7 +219,7 @@ class BPMediaPrivacy {
 		global $bp_media;
 
 		foreach ( $activities->activities as $key => $activity ) {
-			if ( $activity != null && in_array( $activity->type, $bp_media->activity_types ) ) {
+			//if ( $activity != null && in_array( $activity->type, $bp_media->activity_types ) ) {
 				$has_access = BPMediaPrivacy::has_access( $activity->item_id );
 				if ( ! $has_access ) {
 
@@ -227,7 +228,7 @@ class BPMediaPrivacy {
 					$activities->total_activity_count = $activities->total_activity_count - 1;
 					$activities->pag_num = $activities->pag_num - 1;
 				}
-			}
+			//}
 		}
 		$activities_new = array_values( $activities->activities );
 		$activities->activities = $activities_new;
@@ -283,7 +284,7 @@ class BPMediaPrivacy {
 			if ( bp_is_my_profile() ) {
 				$current_privacy = 6;
 			}
-			if ( isset( $bp->displayed_user->id ) )
+			if ( isset( $bp->displayed_user->id ) ) {
 				if ( ! (bp_is_my_profile()) ) {
 					if ( bp_is_active( 'groups' ) && class_exists( 'BP_Group_Extension' ) ) {
 						if ( bp_get_current_group_id() == 0 ) {
@@ -294,8 +295,16 @@ class BPMediaPrivacy {
 								}
 							}
 						}
+					} else {
+						if ( bp_is_active( 'friends' ) ) {
+							$is_friend = friends_check_friendship_status( $bp->loggedin_user->id, $bp->displayed_user->id );
+							if ( $is_friend == 'is_friend' ) {
+								$current_privacy = 4;
+							}
+						}
 					}
 				}
+			}
 		}
 
 		return $current_privacy;
