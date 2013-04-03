@@ -35,7 +35,6 @@ if ( ! class_exists( 'BPMediaActivity' ) ) {
 
 		public function scripts() {
 			wp_enqueue_script( 'json2' );
-			wp_enqueue_script( 'bp-media-activity-uploader', BP_MEDIA_URL . 'app/assets/js/bp-media-activity-uploader.js', array( 'plupload', 'plupload-html5', 'plupload-flash', 'plupload-silverlight', 'plupload-html4', 'plupload-handlers' ), BP_MEDIA_VERSION );
 		}
 
 		public function activity_uploader() {
@@ -64,7 +63,7 @@ if ( ! class_exists( 'BPMediaActivity' ) ) {
 
 		public function get_text( $content ) {
 			$activity_json = $this->decode( $content );
-			$activity_text = $activity_json[ 'update_txt' ];
+			$activity_text = rawurldecode($activity_json[ 'update_txt' ]);
 			return $activity_text;
 		}
 

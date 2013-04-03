@@ -12,104 +12,149 @@
  */
 class BPMediaImporter {
 
-	/**
-	 *
-	 */
+    /**
+     *
+     */
+    var $active;
+    var $import_steps;
 
-	var $active;
-	var $import_steps;
+    function __construct() {
 
-	function __construct() {
+    }
 
-	}
+    function table_exists($table) {
 
-	function table_exists($table){
-		global $wpdb;
-
-		if($wpdb->query("SHOW TABLES LIKE '".$table."'")==1){
-			return true;
-		}
-
+		//for 2.7.6 please remove for 2.8
 		return false;
-	}
 
-	static function _active($path) {
-		if ( ! function_exists( 'is_plugin_inactive' ) ) {
-			require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
-		}
-		global $wpdb;
-		$plugin_name = $path;
-		$is_active = is_plugin_active( $plugin_name );
-		if ( $is_active == true )
-			return 1;
-		$is_inactive = is_plugin_inactive( $plugin_name );
-		if ( $is_inactive == true )
-			return 0;
-		if ( ! $is_active && ! $is_inactive )
-			return -1;
-	}
+        global $wpdb;
 
-	static function file_array($filepath){
+        if ($wpdb->query("SHOW TABLES LIKE '" . $table . "'") == 1) {
+            return true;
+        }
 
-		$path_info = pathinfo($filepath);
+        return false;
+    }
 
-		$file['error']	= '';
-		$file['name']	= $path_info['basename'];
-		$file['type']	= mime_content_type($filepath);
-		$file['tmp_name'] = $filepath;
-		$file['size']	= filesize( $filepath);
+    static function _active($path) {
 
-		return $file;
+		//for 2.7.6 please remove for 2.8
+		return -1;
 
-	}
+        if (!function_exists('is_plugin_inactive')) {
+            require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+        }
+        if (is_plugin_active($path))
+            return 1;
+        $plugins = get_plugins();
+        if (array_key_exists($path, $plugins)) {
+            return 0;
+        } else {
+            return -1;
+        }
+    }
 
-	function create_album($album_name = '',$author_id=1){
+    static function file_array($filepath) {
 
-		global $bp_media;
+        $path_info = pathinfo($filepath);
 
-		if(array_key_exists('bp_album_import_name',$bp_media->options)){
-			if($bp_media->options['bp_album_import_name']!=''){
-				$album_name = $bp_media->options['bp_album_import_name'];
-			}
-		}
-		$found_album = BuddyPressMedia::get_wall_album();
+        $file['error'] = '';
+        $file['name'] = $path_info['basename'];
+        $file['type'] = mime_content_type($filepath);
+        $file['tmp_name'] = $filepath;
+        $file['size'] = filesize($filepath);
 
-		if(count($found_album)< 1){
-			$album = new BPMediaAlbum();
-			$album->add_album($album_name,$author_id);
-			$album_id = $album->get_id();
-		}else{
-			$album_id = $found_album[0]->ID;
-		}
-		return $album_id;
-	}
+        return $file;
+    }
 
-	static function add_media($album_id, $title='',$description='',$filepath='',$privacy=0,$author_id=false){
+    static function make_copy($filepath) {
+        $upload_dir = wp_upload_dir();
+        $path_info = pathinfo($filepath);
+        $tmp_dir = trailingslashit($upload_dir['basedir']) . 'bp-album-importer';
+        $newpath = trailingslashit($tmp_dir) . $path_info['basename'];
+        if (!is_dir($tmp_dir)) {
+            wp_mkdir_p($tmp_dir);
+        }
+        if (copy($filepath, $newpath)) {
+            return BPMediaImporter::file_array($newpath);
+        }
+    }
+
+    function create_album($album_name = '', $author_id = 1) {
+
+        global $bp_media;
+
+        if (array_key_exists('bp_album_import_name', $bp_media->options)) {
+            if ($bp_media->options['bp_album_import_name'] != '') {
+                $album_name = $bp_media->options['bp_album_import_name'];
+            }
+        }
+        $found_album = BuddyPressMedia::get_wall_album();
+
+        if (count($found_album) < 1) {
+            $album = new BPMediaAlbum();
+            $album->add_album($album_name, $author_id);
+            $album_id = $album->get_id();
+        } else {
+            $album_id = $found_album[0]->ID;
+        }
+        return $album_id;
+    }
+
+    static function add_media($album_id, $title = '', $description = '', $filepath = '', $privacy = 0, $author_id = false) {
 
 
-		$files = BPMediaImporter::file_array($filepath);
+        $files = BPMediaImporter::make_copy($filepath);
+        if ($files) {
 
+            $bp_imported_media = new BPMediaHostWordpress();
+//            add_filter('bp_media_force_hide_activity', create_function('', 'return true;'));
+            $imported_media_id = $bp_imported_media->add_media($title, $description, $album_id, 0, false, false, $files);
 
-			$bp_imported_media =new BPMediaHostWordpress();
+            wp_update_post($args = array('ID' => $imported_media_id, 'post_author' => $author_id));
 
-			$imported_media_id = $bp_imported_media->add_media($title, $description, $album_id, 0, false, false, $files);
+            $bp_album_privacy = $privacy;
+            if ($bp_album_privacy == 10)
+                $bp_album_privacy = 6;
 
-			wp_update_post($args=array('ID'=>$imported_media_id,'post_author'=> $author_id));
+            $privacy = new BPMediaPrivacy();
+            $privacy->save($bp_album_privacy, $imported_media_id);
+            return $imported_media_id;
+        }
+        return 0;
+    }
 
-			$bp_album_privacy = $privacy;
-			if($bp_album_privacy == 10)
-				$bp_album_privacy = 6;
+    static function cleanup($table, $directory) {
+        global $wpdb;
+        $wpdb->query("DROP TABLE IF EXISTS $table");
+        $wpdb->query(
+                $wpdb->prepare(
+                        "
+                DELETE FROM {$wpdb->base_prefix}bp_activity
+		 WHERE component = %s
+		", 'album'
+                )
+        );
+        if (is_dir($directory)) {
+            BPMediaImporter::delete($directory);
+        }
+    }
 
-			$privacy = new BPMediaPrivacy();
-			$privacy->save($bp_album_privacy,$imported_media_id);
-	}
+    static function delete($path) {
+        if (is_dir($path) === true) {
+            $files = array_diff(scandir($path), array('.', '..'));
 
+            foreach ($files as $file) {
+                BPMediaImporter::delete(realpath($path) . '/' . $file);
+            }
 
-	function cleanup(){
-		return;
+            return rmdir($path);
+        } else if (is_file($path) === true) {
+            return unlink($path);
+        }
 
-	}
-
+        return false;
+    }
 
 }
 
