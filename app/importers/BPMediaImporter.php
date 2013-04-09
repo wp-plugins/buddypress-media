@@ -22,11 +22,7 @@ class BPMediaImporter {
 
     }
 
-    function table_exists($table) {
-
-		//for 2.7.6 please remove for 2.8
-		return false;
-
+    static function table_exists($table) {
         global $wpdb;
 
         if ($wpdb->query("SHOW TABLES LIKE '" . $table . "'") == 1) {
@@ -37,10 +33,6 @@ class BPMediaImporter {
     }
 
     static function _active($path) {
-
-		//for 2.7.6 please remove for 2.8
-		return -1;
-
         if (!function_exists('is_plugin_inactive')) {
             require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
         }
@@ -75,9 +67,12 @@ class BPMediaImporter {
         if (!is_dir($tmp_dir)) {
             wp_mkdir_p($tmp_dir);
         }
-        if (copy($filepath, $newpath)) {
-            return BPMediaImporter::file_array($newpath);
+        if(file_exists($filepath)) {
+            if (copy($filepath, $newpath)) {
+                return BPMediaImporter::file_array($newpath);
+            }
         }
+        return 0;
     }
 
     function create_album($album_name = '', $author_id = 1) {
@@ -101,18 +96,18 @@ class BPMediaImporter {
         return $album_id;
     }
 
-    static function add_media($album_id, $title = '', $description = '', $filepath = '', $privacy = 0, $author_id = false) {
+    static function add_media($album_id, $title = '', $description = '', $filepath = '', $privacy = 0, $author_id = false, $album_name = false) {
 
 
         $files = BPMediaImporter::make_copy($filepath);
         if ($files) {
-
+            global $wpdb;
             $bp_imported_media = new BPMediaHostWordpress();
 //            add_filter('bp_media_force_hide_activity', create_function('', 'return true;'));
-            $imported_media_id = $bp_imported_media->add_media($title, $description, $album_id, 0, false, false, $files);
-
+            $imported_media_id = $bp_imported_media->insert_media($title, $description, $album_id, 0, false, false, $files, $author_id, $album_name);
+            
             wp_update_post($args = array('ID' => $imported_media_id, 'post_author' => $author_id));
-
+            
             $bp_album_privacy = $privacy;
             if ($bp_album_privacy == 10)
                 $bp_album_privacy = 6;
