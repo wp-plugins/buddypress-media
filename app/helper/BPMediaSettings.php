@@ -46,6 +46,49 @@ if (!class_exists('BPMediaSettings')) {
                 'option' => 'audio_enabled',
                 'desc' => __('Enable Audio (mp3)', 'buddypress-media')
             ));
+
+            add_settings_section('bpm-image-settings', __('Image Settings', 'buddypress-media'), array($this, 'image_settings_intro'), 'bp-media-settings');
+            add_settings_field('bpm-image-thumbnail', __('Thumbnail Size', 'buddypress-media'), array($this, 'dimensions'), 'bp-media-settings', 'bpm-image-settings', array(
+                'type' => 'image',
+                'size' => 'thumbnail',
+                'crop' => true,
+                'desc' => __('Used in albums, sidebar media widget acitvity stream', 'buddypress-media')
+            ));
+            add_settings_field('bpm-image-medium', __('Medium Size', 'buddypress-media'), array($this, 'dimensions'), 'bp-media-settings', 'bpm-image-settings', array(
+                'type' => 'image',
+                'size' => 'medium',
+                'crop' => true,
+                'desc' => __('Used in activity stream for single media uploads', 'buddypress-media')
+            ));
+            add_settings_field('bpm-image-large', __('Large Size', 'buddypress-media'), array($this, 'dimensions'), 'bp-media-settings', 'bpm-image-settings', array(
+                'type' => 'image',
+                'size' => 'large',
+                'crop' => true,
+                'desc' => __('Used in single media and thickbox', 'buddypress-media')
+            ));
+
+            add_settings_section('bpm-video-settings', __('Video Payer Settings', 'buddypress-media'), is_multisite() ? array($this, 'network_notices') : '', 'bp-media-settings');
+            add_settings_field('bpm-video-medium', __('Activity Player Size', 'buddypress-media'), array($this, 'dimensions'), 'bp-media-settings', 'bpm-video-settings', array(
+                'type' => 'video',
+                'size' => 'medium'
+            ));
+            add_settings_field('bpm-video-large', __('Single Player Size', 'buddypress-media'), array($this, 'dimensions'), 'bp-media-settings', 'bpm-video-settings', array(
+                'type' => 'video',
+                'size' => 'large'
+            ));
+
+            add_settings_section('bpm-audio-settings', __('Audio Player Settings', 'buddypress-media'), is_multisite() ? array($this, 'network_notices') : '', 'bp-media-settings');
+            add_settings_field('bpm-audio-medium', __('Activity Player Size', 'buddypress-media'), array($this, 'dimensions'), 'bp-media-settings', 'bpm-audio-settings', array(
+                'type' => 'audio',
+                'size' => 'medium',
+                'height' => false
+            ));
+            add_settings_field('bpm-audio-large', __('Single Player Size', 'buddypress-media'), array($this, 'dimensions'), 'bp-media-settings', 'bpm-audio-settings', array(
+                'type' => 'audio',
+                'size' => 'large',
+                'height' => false
+            ));
+
             if (bp_is_active('activity')) {
                 add_settings_section('bpm-activity-upload', __('Activity Upload', 'buddypress-media'), '', 'bp-media-settings');
                 add_settings_field('bpm-activity', __('Activity Uploads', 'buddypress-media'), array($this, 'checkbox'), 'bp-media-settings', 'bpm-activity-upload', array(
@@ -55,15 +98,15 @@ if (!class_exists('BPMediaSettings')) {
                         )
                 );
             }
-            
+
             add_settings_section('bpm-media-lightbox', __('Lightbox Integration', 'buddypress-media'), '', 'bp-media-settings');
             add_settings_field('bpm-media-lightbox-option', __('Lightbox', 'buddypress-media'), array($this, 'checkbox'), 'bp-media-settings', 'bpm-media-lightbox', array(
-                    'setting' => 'bp_media_options',
-                    'option' => 'enable_lightbox',
-                    'desc' => __('Enable Lighbox on Media', 'buddypress-media')
-                        )
-                );
-            
+                'setting' => 'bp_media_options',
+                'option' => 'enable_lightbox',
+                'desc' => __('Enable Lighbox on Media', 'buddypress-media')
+                    )
+            );
+
             if (bp_is_active('groups')) {
                 add_settings_section('bpm-media-type', __('Groups Integration', 'buddypress-media'), '', 'bp-media-settings');
 //            add_settings_field('bpm-admin-profile', __('User profiles', 'buddypress-media'), array($this, 'checkbox'), 'bp-media-settings', 'bpm-media-type', array(
@@ -79,8 +122,6 @@ if (!class_exists('BPMediaSettings')) {
                         )
                 );
             }
-
-
 
             add_settings_section('bpm-media-fine', __('Display Settings', 'buddypress-media'), '', 'bp-media-settings');
             add_settings_field('bpm-media-count', __('Number of media', 'buddypress-media'), array($this, 'textbox'), 'bp-media-settings', 'bpm-media-fine', array(
@@ -134,24 +175,20 @@ if (!class_exists('BPMediaSettings')) {
             add_settings_field('bpm-other-settings', __('Recount', 'buddypress-media'), array($this, 'button'), 'bp-media-settings', 'bpm-miscellaneous', array(
                 'option' => 'refresh-count',
                 'name' => __('Recount', 'buddypress-media'),
-                'desc' => '<br />'.__('Repair media counts', 'buddypress-media')
+                'desc' => '<br />' . __('Repair media counts', 'buddypress-media')
             ));
 
             $bp_media_addon = new BPMediaAddon();
             add_settings_section('bpm-addons', __('BuddyPress Media Addons for Audio/Video Conversion', 'buddypress-media'), array($bp_media_addon, 'get_addons'), 'bp-media-addons');
-            add_settings_section('bpm-support', __('Submit a request form', 'buddypress-media'), '', 'bp-media-support');
-            add_settings_field('bpm-request', __('Request Type', 'buddypress-media'), array($this, 'dropdown'), 'bp-media-support', 'bpm-support', array('option' => 'select-request', 'none' => false, 'values' => array(
-                    '' => '-- ' . __('Select One', 'buddypress-media') . ' --',
-                    'premium_support' => __('Premium Support', 'buddypress-media'),
-                    'new_feature' => __('Suggest a New Feature', 'buddypress-media'),
-                    'bug_report' => __('Submit a Bug Report', 'buddypress-media'))
-            ));
+            
+            add_settings_section('bpm-support', __('Support', 'buddypress-media'), array($this,'bp_media_support_intro'), 'bp-media-support');
+            
             if (!BPMediaPrivacy::is_installed()) {
                 $bp_media_privacy = new BPMediaPrivacySettings();
                 add_filter('bp_media_add_sub_tabs', array($bp_media_privacy, 'ui'), 99, 2);
                 add_settings_section('bpm-privacy', __('Update Database', 'buddypress-media'), array($bp_media_privacy, 'init'), 'bp-media-privacy');
             }
-            
+
             $bp_media_album_importer = new BPMediaAlbumimporter();
             add_settings_section('bpm-bp-album-importer', __('BP-Album Importer', 'buddypress-media'), array($bp_media_album_importer, 'ui'), 'bp-media-importer');
 
@@ -189,37 +226,37 @@ if (!class_exists('BPMediaSettings')) {
         }
 
         public function network_notices() {
-            $flag = 1;
-            if (get_site_option('bpm-media-enable', false)) {
-                echo '<div id="setting-error-bpm-media-enable" class="error"><p><strong>' . get_site_option('bpm-media-enable') . '</strong></p></div>';
-                delete_site_option('bpm-media-enable');
-                $flag = 0;
-            }
-            if (get_site_option('bpm-media-type', false)) {
-                echo '<div id="setting-error-bpm-media-type" class="error"><p><strong>' . get_site_option('bpm-media-type') . '</strong></p></div>';
-                delete_site_option('bpm-media-type');
-                $flag = 0;
-            }
-            if (get_site_option('bpm-media-default-count', false)) {
-                echo '<div id="setting-error-bpm-media-default-count" class="error"><p><strong>' . get_site_option('bpm-media-default-count') . '</strong></p></div>';
-                delete_site_option('bpm-media-default-count');
-                $flag = 0;
-            }
+                $flag = 1;
+                if (get_site_option('bpm-media-enable', false)) {
+                    echo '<div id="setting-error-bpm-media-enable" class="error"><p><strong>' . get_site_option('bpm-media-enable') . '</strong></p></div>';
+                    delete_site_option('bpm-media-enable');
+                    $flag = 0;
+                }
+                if (get_site_option('bpm-media-type', false)) {
+                    echo '<div id="setting-error-bpm-media-type" class="error"><p><strong>' . get_site_option('bpm-media-type') . '</strong></p></div>';
+                    delete_site_option('bpm-media-type');
+                    $flag = 0;
+                }
+                if (get_site_option('bpm-media-default-count', false)) {
+                    echo '<div id="setting-error-bpm-media-default-count" class="error"><p><strong>' . get_site_option('bpm-media-default-count') . '</strong></p></div>';
+                    delete_site_option('bpm-media-default-count');
+                    $flag = 0;
+                }
 
-            if (get_site_option('bpm-recount-success', false)) {
-                echo '<div id="setting-error-bpm-recount-success" class="updated"><p><strong>' . get_site_option('bpm-recount-success') . '</strong></p></div>';
-                delete_site_option('bpm-recount-success');
-                $flag = 0;
-            } elseif (get_site_option('bpm-recount-fail', false)) {
-                echo '<div id="setting-error-bpm-recount-fail" class="error"><p><strong>' . get_site_option('bpm-recount-fail') . '</strong></p></div>';
-                delete_site_option('bpm-recount-fail');
-                $flag = 0;
-            }
+                if (get_site_option('bpm-recount-success', false)) {
+                    echo '<div id="setting-error-bpm-recount-success" class="updated"><p><strong>' . get_site_option('bpm-recount-success') . '</strong></p></div>';
+                    delete_site_option('bpm-recount-success');
+                    $flag = 0;
+                } elseif (get_site_option('bpm-recount-fail', false)) {
+                    echo '<div id="setting-error-bpm-recount-fail" class="error"><p><strong>' . get_site_option('bpm-recount-fail') . '</strong></p></div>';
+                    delete_site_option('bpm-recount-fail');
+                    $flag = 0;
+                }
 
-            if (get_site_option('bpm-settings-saved') && $flag) {
-                echo '<div id="setting-error-bpm-settings-saved" class="updated"><p><strong>' . get_site_option('bpm-settings-saved') . '</strong></p></div>';
-            }
-            delete_site_option('bpm-settings-saved');
+                if (get_site_option('bpm-settings-saved') && $flag) {
+                    echo '<div id="setting-error-bpm-settings-saved" class="updated"><p><strong>' . get_site_option('bpm-settings-saved') . '</strong></p></div>';
+                }
+                delete_site_option('bpm-settings-saved');
         }
 
         /**
@@ -261,9 +298,9 @@ if (!class_exists('BPMediaSettings')) {
                     add_settings_error(__('Media Type', 'buddypress-media'), 'bpm-media-type', __('Atleast one Media Type Must be selected', 'buddypress-media'));
                 $input['images_enabled'] = 1;
             }
-            
+
             $input['default_count'] = intval($_POST['bp_media_options']['default_count']);
-            if (!is_int($input['default_count']) || ($input['default_count'] < 0 ) || empty($input['default_count']) ) {
+            if (!is_int($input['default_count']) || ($input['default_count'] < 0 ) || empty($input['default_count'])) {
                 if (is_multisite())
                     update_site_option('bpm-media-default-count', __('"Number of media" count value should be numeric and greater than 0.', 'buddypress-media'));
                 else
@@ -274,6 +311,17 @@ if (!class_exists('BPMediaSettings')) {
                 update_site_option('bpm-settings-saved', __('Settings saved.', 'buddypress-media'));
             do_action('bp_media_sanitize_settings', $_POST, $input);
             return $input;
+        }
+
+        public function image_settings_intro() {
+            if (is_plugin_active('regenerate-thumbnails/regenerate-thumbnails.php')) {
+                $regenerate_link = admin_url('/tools.php?page=regenerate-thumbnails');
+            } elseif (array_key_exists('regenerate-thumbnails/regenerate-thumbnails.php', get_plugins())) {
+                $regenerate_link = admin_url('/plugins.php#regenerate-thumbnails');
+            } else {
+                $regenerate_link = wp_nonce_url(admin_url('update.php?action=install-plugin&plugin=regenerate-thumbnails'), 'install-plugin_regenerate-thumbnails');
+            }
+            echo '<span class="description">' . sprintf(__('If you make changes to width, height or crop settings, you must use "<a href="%s">Regenerate Thumbnail Plugin</a>" to regenerate old images."', 'buddypress-media'), $regenerate_link) . '</span>';
         }
 
         /**
@@ -416,6 +464,41 @@ if (!class_exists('BPMediaSettings')) {
         }
 
         /**
+         *
+         * @global array $bp_media
+         * @param type $args
+         * @return type
+         */
+        public function dimensions($args) {
+            global $bp_media;
+            $defaults = array(
+                'type' => 'image',
+                'size' => 'thumbnail',
+                'height' => true,
+                'crop' => false,
+                'desc' => ''
+            );
+            $args = wp_parse_args($args, $defaults);
+            extract($args);
+
+            $options = bp_get_option('bp_media_options');
+
+            $w = $options['sizes'][$type][$size]['width'];
+            if ($height) {
+                $h = $options['sizes'][$type][$size]['height'];
+            }
+            if ($crop) {
+                $c = $options['sizes'][$type][$size]['crop'];
+            }
+                ?>
+            <label for="<?php echo sanitize_title("{$type}_{$size}_w"); ?>"><?php _e('Width', 'buddypress-media'); ?> <input value="<?php echo $w; ?>" name="<?php echo "bp_media_options[sizes][$type][$size][width]"; ?>" id="<?php echo sanitize_title("{$type}_{$size}_w"); ?>" type="number" class="small-text" /></label>
+            <?php if ($height) { ?><label for="<?php echo sanitize_title("{$type}_{$size}_h"); ?>"><?php _e('Height', 'buddypress-media'); ?> <input value="<?php echo $h; ?>" name="<?php echo "bp_media_options[sizes][$type][$size][height]"; ?>" id="<?php echo sanitize_title("{$type}_{$size}_h"); ?>" type="number" class="small-text" /></label> <?php } ?>
+            <?php if ($crop) { ?><label for="<?php echo sanitize_title("{$type}_{$size}_c"); ?>"> <input value="1"<?php checked($c ? $c : 0, 1); ?> name="<?php echo "bp_media_options[sizes][$type][$size][crop]"; ?>" id="<?php echo sanitize_title("{$type}_{$size}_c"); ?>" type="checkbox" /> <?php _e('Crop', 'buddypress-media'); ?></label><?php } ?>
+            <?php if ($desc) { ?><br /><span class="description"><?php echo $desc; ?></span><?php
+            }
+        }
+
+        /**
          * Outputs Dropdown
          *
          * @global array $bp_media
@@ -453,14 +536,14 @@ if (!class_exists('BPMediaSettings')) {
             if ((isset($options[$option]) && empty($options[$option])) || !isset($options[$option])) {
                 $options[$option] = '';
             }
-                ?>
+            ?>
             <select name="<?php echo $name; ?>" id="<?php echo $option; ?>"><?php if ($none) { ?>
                     <option><?php _e('None', 'buddypress-media'); ?></option><?php
             }
             foreach ($values as $value => $text) {
-                    ?>
-                    <option<?php selected($options[$option], $value); ?> value="<?php echo $value; ?>"><?php echo $text; ?></option><?php }
                 ?>
+                    <option<?php selected($options[$option], $value); ?> value="<?php echo $value; ?>"><?php echo $text; ?></option><?php }
+            ?>
             </select><?php
         }
 
@@ -495,7 +578,7 @@ if (!class_exists('BPMediaSettings')) {
                 $button = $option;
             submit_button($name, '', $button, false);
             if (!empty($desc)) {
-                    ?>
+                ?>
                 <span class="description"><?php echo $desc; ?></a><?php
             }
         }
@@ -515,8 +598,13 @@ if (!class_exists('BPMediaSettings')) {
 				';
             echo $notice;
         }
+        
+        public function bp_media_support_intro(){
+            echo '<p>'.__('If your site has some issues due to BuddyPress Media and you want one on one support then you can create a support topic on the <a target="_blank" href="http://rtcamp.com/support/forum/buddypress-media/technical-support/">rtCamp Support Forum</a>.','buddypress-media').'</p>';
+            echo '<p>'.__('If you have any suggestions, enhancements or bug reports, then you can open a new issue on <a target="_blank" href="https://github.com/rtCamp/buddypress-media/issues/new">GitHub</a>.','buddypress-media').'</p>';
+        }
 
     }
 
 }
-    ?>
+?>

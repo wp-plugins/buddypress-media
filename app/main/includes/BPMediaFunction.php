@@ -48,6 +48,7 @@ class BPMediaFunction {
         $activity_allowedtags['audio']['id'] = array();
         $activity_allowedtags['audio']['class'] = array();
         $activity_allowedtags['audio']['src'] = array();
+        $activity_allowedtags['audio']['width'] = array();
         $activity_allowedtags['audio']['controls'] = array();
         $activity_allowedtags['audio']['preload'] = array();
         $activity_allowedtags['audio']['alt'] = array();
@@ -205,7 +206,7 @@ class BPMediaFunction {
                 $content .= $bp_media->get_album_activity_content();
             }
             $content .= '</ul>';
-            $activity_id = get_post_meta($album->get_id(), 'bp_media_child_activity',true);
+            $activity_id = get_post_meta($album->get_id(), 'bp_media_child_activity', true);
             if ($activity_id) {
                 $args = array(
                     'in' => $activity_id,

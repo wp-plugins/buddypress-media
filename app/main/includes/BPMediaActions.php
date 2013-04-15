@@ -39,6 +39,9 @@ class BPMediaActions {
         add_action('bp_media_after_update_media', array($this, 'update_count'), 999);
         add_action('bp_media_after_delete_media', array($this, 'update_count'), 999);
         add_action('bp_before_group_settings_creation_step', array($this, 'group_create_default_album'));
+        add_filter('intermediate_image_sizes_advanced', array($this, 'filter_image_sizes_details'));
+        add_filter('intermediate_image_sizes', array($this, 'filter_image_sizes'));
+//        add_shortcode('bpmedia', array($this, 'bpmedia_shortcode'));
         $linkback = bp_get_option('bp_media_add_linkback', false);
         if ($linkback)
             add_action('bp_footer', array($this, 'footer'));
@@ -326,8 +329,9 @@ class BPMediaActions {
             if (bp_displayed_user_id() == bp_loggedin_user_id())
                 $action_buttons[] = '<a href="' . $bp_media_current_entry->get_edit_url()
                         . '" class="button item-button bp-secondary-action bp-media-edit" title="'
-                        . __('Edit Media', 'buddypress-media') . '">' . __('Edit', 'buddypress-media') . '</a>';
+                        . __('Edit Media', BP_MEDIA_TXT_DOMAIN) . '">' . __('Edit', BP_MEDIA_TXT_DOMAIN) . '</a>';
         }
+
         $action_buttons = apply_filters('bp_media_action_buttons', $action_buttons);
         foreach ($action_buttons as $action_button) {
             echo $action_button;
@@ -844,34 +848,6 @@ class BPMediaActions {
         die;
     }
 
-    public function get_thumbnail() {
-        $id = $_POST['media_id'];
-        $content = '';
-        $media = new BPMediaHostWordpress($id);
-        switch ($media->get_type()) {
-            case 'video' :
-                if ($media->get_thumbnail_id()) {
-                    $image_array = image_downsize($media->get_thumbnail_id(), 'thumbnail');
-                    $content.=apply_filters('bp_media_ajax_thumbnail_filter', '<video poster="' . $image_array[0] . '" src="' . wp_get_attachment_url($media->get_id()) . '" width="' . $default_sizes['single_video']['width'] . '" height="' . ($default_sizes['single_video']['height'] == 0 ? 'auto' : $default_sizes['single_video']['height']) . '" type="video/mp4" id="bp_media_video_' . $media->get_id() . '" controls="controls" preload="none"></video><script>bp_media_create_element("bp_media_video_' . $media->get_id() . '");</script>', $media);
-                } else {
-                    $content.=apply_filters('bp_media_ajax_thumbnail_filter', '<video src="' . wp_get_attachment_url($media->get_id()) . '" width="' . $default_sizes['single_video']['width'] . '" height="' . ($default_sizes['single_video']['height'] == 0 ? 'auto' : $default_sizes['single_video']['height']) . '" type="video/mp4" id="bp_media_video_' . $media->get_id() . '" controls="controls" preload="none"></video><script>bp_media_create_element("bp_media_video_' . $media->get_id() . '");</script>', $media);
-                }
-                break;
-            case 'audio' :
-                $content.=apply_filters('bp_media_ajax_thumbnail_filter', '<audio src="' . wp_get_attachment_url($media->get_id()) . '" width="' . $default_sizes['single_audio']['width'] . '" type="audio/mp3" id="bp_media_audio_' . $media->get_id() . '" controls="controls" preload="none" ></audio><script>bp_media_create_element("bp_media_audio_' . $media->get_id() . '");</script>', $media);
-                break;
-            case 'image' :
-                $image_array = image_downsize($media->get_id(), 'thumbnail');
-                $content.=apply_filters('bp_media_ajax_thumbnail_filter', '<img src="' . $image_array[0] . '" id="bp_media_image_' . $media->get_id() . '" />', $media);
-                break;
-            default :
-                return false;
-        }
-
-        echo $content;
-        die();
-    }
-
     public function default_user_album() {
         $album_id = 0;
         if (is_user_logged_in()) {
@@ -938,6 +914,124 @@ class BPMediaActions {
     function group_create_default_album() {
         $bp_album = new BPMediaHostWordpress();
         $bp_album->check_and_create_album(0, bp_get_new_group_id());
+    }
+
+    function filter_image_sizes_details($sizes) {
+        if (isset($_REQUEST['post_id'])) {
+            $sizes = $this->unset_bp_media_image_sizes_details($sizes);
+        } elseif (isset($_REQUEST['id'])) { //For Regenerate Thumbnails Plugin
+            if ($parent_id = get_post_field('post_parent', $_REQUEST['id'])) {
+                $post_type = get_post_field('post_type', $parent_id);
+                if ($post_type == 'bp_media_album') {
+                    global $bp_media;
+                    $bp_media_sizes = $bp_media->media_sizes();
+                    $sizes = array(
+                        'bp_media_thumbnail' => $bp_media_sizes['image']['thumbnail'],
+                        'bp_media_activity_image' => $bp_media_sizes['image']['medium'],
+                        'bp_media_single_image' => $bp_media_sizes['image']['large']
+                    );
+                } else {
+                    $sizes = $this->unset_bp_media_image_sizes_details($sizes);
+                }
+            } else {
+                $sizes = $this->unset_bp_media_image_sizes_details($sizes);
+            }
+        }
+
+        return $sizes;
+    }
+
+    function filter_image_sizes($sizes) {
+        if (isset($_REQUEST['postid'])) { //For Regenerate Thumbnails Plugin
+            if ($parent_id = get_post_field('post_parent', $_REQUEST['postid'])) {
+                $post_type = get_post_field('post_type', $parent_id);
+                if ($post_type == 'bp_media_album') {
+                    $sizes = array(
+                        'bp_media_thumbnail', 'bp_media_activity_image', 'bp_media_single_image'
+                    );
+                } else {
+                    $sizes = $this->unset_bp_media_image_sizes($sizes);
+                }
+            } else {
+                $sizes = $this->unset_bp_media_image_sizes($sizes);
+            }
+        }
+
+        return $sizes;
+    }
+
+    function unset_bp_media_image_sizes_details($sizes) {
+        if (isset($sizes['bp_media_thumbnail']))
+            unset($sizes['bp_media_thumbnail']);
+        if (isset($sizes['bp_media_activity_image']))
+            unset($sizes['bp_media_activity_image']);
+        if (isset($sizes['bp_media_single_image']))
+            unset($sizes['bp_media_single_image']);
+        return $sizes;
+    }
+
+    function unset_bp_media_image_sizes($sizes) {
+        if (($key = array_search('bp_media_thumbnail', $sizes)) !== false)
+            unset($sizes[$key]);
+        if (($key = array_search('bp_media_activity_image', $sizes)) !== false)
+            unset($sizes[$key]);
+        if (($key = array_search('bp_media_single_image', $sizes)) !== false)
+            unset($sizes[$key]);
+        return $sizes;
+    }
+
+    function bpmedia_shortcode($atts) {
+        extract(shortcode_atts(array(
+                    'media' => 'all',
+                    'count' => '10',
+                        ), $atts));
+
+        $value = 0;
+        if (is_user_logged_in()) {
+            $value = 2;
+        }
+        $privacy_query = array(
+            array(
+                'key' => 'bp_media_privacy',
+                'value' => $value,
+                'compare' => '<='
+            )
+        );
+        $args = array(
+            'post_type' => 'attachment',
+            'post_status' => 'any',
+            'meta_query' => $privacy_query,
+            'posts_per_page' => $count
+        );
+        if ($media != 'all')
+            $args['post_mime_type'] = $media;
+        $query = new WP_Query($args);
+        if ($query->have_posts()) {
+            ?>
+            <div id="item-body"><ul class="bp-media-gallery item-list"><?php
+            while ($query->have_posts()) {
+                $query->the_post();
+                try {
+                    $entry = new BPMediaHostWordpress(get_the_ID());
+                    echo $entry->get_media_gallery_content();
+                } catch (Exception $e) {
+                    echo '<li>';
+                    echo $e->getMessage();
+                    echo '<h3><a>Private</h3>';
+                    echo '</li>';
+                }
+            }
+            ?>
+                </ul></div>
+            <div class="bp-media-actions"><a href="#" class="button" id="bp-media-show-more">Show More</a></div><?php
+        } else {
+            $media_string = $type;
+            if ($type === 'all') {
+                $media_string = 'media';
+            }
+            _e('No ' . $wdType . ' ' . $media_string . ' found', 'buddypress-media');
+        }
+        wp_reset_query();
     }
 
 }
