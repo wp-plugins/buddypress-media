@@ -335,6 +335,7 @@ class BPMediaScreen {
                       maxlength="<?php echo max(array($bp_media_default_excerpts['single_entry_description'], $bp_media_default_excerpts['activity_entry_description'])) ?>"
                       ><?php echo $bp_media_current_entry->get_content(); ?></textarea>
                       <?php do_action('bp_media_add_media_fields', $this->media_type); ?>
+            
             <div class="submit">
                 <input type="submit" class="auto" value="<?php _e('Update', 'buddypress-media'); ?>" />
                 <a href="<?php echo $bp_media_current_entry->get_url(); ?>" class="button" title="<?php _e('Back to Media File', 'buddypress-media'); ?>">

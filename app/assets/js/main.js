@@ -104,6 +104,11 @@ jQuery(document).ready(function(){
             $current = jQuery(this);
             load_media($current);
         });
+        jQuery('.widget-item-listing').on('click','li a',function(e){
+            e.preventDefault();
+            $current = jQuery(this);
+            load_media($current);
+        });
         jQuery('ul#activity-stream').on('click',
             'li.media.album_updated ul li a,	ul.bp-media-list-media li a, li.activity-item div.activity-content div.activity-inner div.bp_media_content a',function(e){
                 e.preventDefault();
@@ -174,7 +179,7 @@ jQuery(document).ready(function(){
                     'opacity': 90
                 });
                 do_fixes($medialoaded);
-				jQuery('.bp_media_content video,.bp_media_content audio').trigger('mediapreview');
+                jQuery('.bp_media_content video,.bp_media_content audio').trigger('mediapreview');
             });
         }
         function transit_media($current){
@@ -187,7 +192,7 @@ jQuery(document).ready(function(){
                 $medialoaded.empty();
                 $medialoaded.append($mediacontent);
                 do_fixes($medialoaded);
-				jQuery('.bp_media_content video,.bp_media_content audio').trigger('mediapreview');
+                jQuery('.bp_media_content video,.bp_media_content audio').trigger('mediapreview');
             });
         }
 
@@ -250,6 +255,13 @@ jQuery(document).ready(function(){
         /* Hide excess comments */
         //	if ( jQuery('.activity-comments').length )
         //		bp_legacy_theme_hide_comments();
+        
+        jQuery('.bp-media-image-editor').bind('DOMNodeInserted DOMNodeRemoved', function(event) {
+            $id = jQuery('.bp-media-image-editor').attr('id').replace('image-editor-','');
+            if (!jQuery('#imgedit-save-target-'+$id).length){
+                jQuery('#imgedit-y-'+$id).after('<p id="imgedit-save-target-'+$id+'" style="display: none;"><input type="checkbox" style="display:none;" checked="checked" name="imgedit-target-'+$id+'" value="all"></p>');
+            }
+        });
 
         /* Activity list event delegation */
         jQuery('body').on( 'click', '.bp-media-ajax-single div.activity',function(event) {
