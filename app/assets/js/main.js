@@ -30,7 +30,219 @@ jQuery(document).ready(function(){
 
 
     jQuery('#item-body').on('click','#bp-media-upload-button', function(){
-        jQuery(this).next().slideToggle();
+        jQuery('#bp-media-move-merge-ui').slideUp();
+        jQuery('#bp-media-delete-ui').slideUp();
+        jQuery('#bp-media-list input').remove();
+        jQuery('#bp-media-show-more').attr('data-move',0);
+        $parent = jQuery('.bp-media-album-actions');
+        $wrapper = jQuery('.bp-media-upload-wrapper');
+        $description = jQuery('.bp-media-album-description');
+        if($parent.length>0 && $wrapper.length<=0 ){
+            if($description.length>0)
+                $description.after('<div class="bp-media-action-wrapper bp-media-upload-wrapper"></div>');
+            else
+                $parent.after('<div class="bp-media-action-wrapper bp-media-upload-wrapper"></div>');
+            jQuery('#bp-media-upload-ui').appendTo('.bp-media-upload-wrapper');
+        }
+        jQuery('#bp-media-upload-ui').slideToggle();
+    });
+    
+    jQuery('#item-body').on('click','#bp-media-move-merge-button', function(){
+        jQuery('#bp-media-upload-ui').slideUp();
+        jQuery('#bp-media-delete-ui').slideUp();
+        $parent = jQuery('.bp-media-album-actions');
+        $wrapper = jQuery('.bp-media-move-merge-wrapper');
+        $description = jQuery('.bp-media-album-description');
+        if($parent.length>0 && $wrapper.length<=0 ){
+            if($description.length>0)
+                $description.after('<div class="bp-media-action-wrapper bp-media-move-merge-wrapper"></div>');
+            else
+                $parent.after('<div class="bp-media-action-wrapper bp-media-move-merge-wrapper"></div>');
+            jQuery('#bp-media-move-merge-ui').appendTo('.bp-media-move-merge-wrapper');
+        }
+        jQuery('#bp-media-move-merge-ui').slideToggle('slow',function(){
+            if(jQuery(this).css('display') == 'none' || jQuery('#bp-media-move-merge-select option:checked').val() == 'merge') {
+                jQuery('#bp-media-list input').remove();
+                jQuery('#bp-media-show-more').attr('data-move',0);
+            } else if ( !jQuery('#bp-media-list input').length ) {
+                jQuery('#bp-media-show-more').attr('data-move',1);
+                jQuery('#bp-media-list h3').each(function(){
+                    $media_id = jQuery(this).parent().attr('id').replace('bp-media-item-','');
+                    jQuery(this).prepend('<input type="checkbox" name="move" value="'+$media_id+'" />');
+                });
+            }
+        });
+    });
+    
+    jQuery('#item-body').on('click','#bp-media-delete-button', function(){
+        jQuery('#bp-media-upload-ui').slideUp();
+        jQuery('#bp-media-move-merge-ui').slideUp();
+        $parent = jQuery('.bp-media-album-actions');
+        $wrapper = jQuery('.bp-media-delete-wrapper');
+        $description = jQuery('.bp-media-album-description');
+        if($parent.length>0 && $wrapper.length<=0 ){
+            if($description.length>0)
+                $description.after('<div class="bp-media-action-wrapper bp-media-delete-wrapper"></div>');
+            else
+                $parent.after('<div class="bp-media-action-wrapper bp-media-delete-wrapper"></div>');
+            jQuery('#bp-media-delete-ui').appendTo('.bp-media-delete-wrapper');
+        }
+        jQuery('#bp-media-delete-ui').slideToggle('slow',function(){
+            if(jQuery(this).css('display') == 'none') {
+                jQuery('#bp-media-list input').remove();
+                jQuery('#bp-media-show-more').attr('data-move',0);
+            } else if ( !jQuery('#bp-media-list input').length ) {
+                jQuery('#bp-media-show-more').attr('data-move',1);
+                jQuery('#bp-media-list h3').each(function(){
+                    $media_id = jQuery(this).parent().attr('id').replace('bp-media-item-','');
+                    jQuery(this).prepend('<input type="checkbox" name="move" value="'+$media_id+'" />');
+                });
+            }
+        });
+    });
+    
+    jQuery('#bp-media-move-merge-ui,#bp-media-delete-ui').on('click','.select-all', function(e){
+        e.preventDefault();
+        jQuery('#bp-media-list input').each(function(){
+            jQuery(this).prop('checked',true);
+        });
+    });
+    
+    jQuery('#bp-media-move-merge-ui,#bp-media-delete-ui').on('click','.unselect-all', function(e){
+        e.preventDefault();
+        jQuery('#bp-media-list input').each(function(){
+            jQuery(this).prop('checked',false);
+        });
+    });
+    
+    jQuery('#bp-media-move-merge-ui').on('change','#bp-media-move-merge-select', function(){
+        $this = jQuery(this);
+        if ( $this.val() == 'move' ) {
+            if ( !jQuery('#bp-media-list input').length ) {
+                jQuery('#bp-media-list h3').each(function(){
+                    $media_id = jQuery(this).parent().attr('id').replace('bp-media-item-','');
+                    jQuery(this).prepend('<input type="checkbox" name="move" value="'+$media_id+'" />');
+                });
+            }
+            jQuery('#bp-media-show-more').attr('data-move',1);
+            jQuery('.bp-media-move-selected-checks').fadeIn();
+        } else if ( $this.val() == 'merge' ) {           
+            jQuery('.bp-media-move-selected-checks').fadeOut();
+            jQuery('#bp-media-list input').remove();
+            jQuery('#bp-media-show-more').attr('data-move',0)
+        }
+    });
+    
+    jQuery('#bp-media-move-merge-ui').on('click','#bp-media-move-merge-media',function(){
+        jQuery(this).siblings('.bp-media-ajax-spinner').show();
+        jQuery(this).prop('disabled',true);
+        jQuery(this).addClass('disabled');
+        $val = jQuery('#bp-media-move-merge-select option:checked').val();
+        if ( $val == 'merge' ) {
+            if(confirm(bp_media_main_strings.merge_confirmation)){
+                $delete_album = false;
+                //                if ( jQuery('.bp-media-can-delete').length ) {
+                //                    if(confirm(bp_media_main_strings.delete_after_merge))
+                //                        $delete_album = true;
+                //                }
+                $from = jQuery('#bp-media-selected-album').val();
+                $to = jQuery('.bp-media-selected-album-move-merge option:checked').val();
+                if ( $from && $to ) {
+                    var data = {
+                        action: 'bp_media_merge_album',
+                        from: $from,
+                        to: $to,
+                        delete_album: $delete_album
+                    };
+                    jQuery.post(bp_media_vars.ajaxurl, data, function(response) {
+                        if(response.length==0) {
+                            jQuery('.item-list-tabs:last').after('<div id="message" class="error"><p>'+bp_media_main_strings.something_went_wrong+'</p></div>');
+                        } else if( response == 'redirect' ) {
+                            window.location = window.location.href.replace($from,$to);
+                        } else {
+                            location.reload();
+                        }
+                    });
+                }
+            } else {
+                jQuery(this).siblings('.bp-media-ajax-spinner').hide();
+                jQuery(this).prop('disabled',false);
+                jQuery(this).removeClass('disabled');
+                return false;
+            }
+        } else if( $val == 'move' ) {
+            $media = new Array();
+            jQuery('input:checkbox[name="move"]:checked').each(function(){
+                $media.push(jQuery(this).val());
+            });
+            if ($media.length) {
+                if(confirm(bp_media_main_strings.are_you_sure)){
+                    var data = {
+                        action: 'bp_media_move_selected_media',
+                        media: $media,
+                        parent: jQuery('.bp-media-selected-album-move-merge option:checked').val()
+                    };
+                    jQuery.post(bp_media_vars.ajaxurl, data, function(response) {
+                        if(response.length==0) {
+                            jQuery('.item-list-tabs:last').after('<div id="message" class="error"><p>'+bp_media_main_strings.something_went_wrong+'</p></div>');
+                        } else {
+                            location.reload();
+                        }
+                    });
+                } else {
+                    jQuery(this).siblings('.bp-media-ajax-spinner').hide();
+                    jQuery(this).prop('disabled',false);
+                    jQuery(this).removeClass('disabled');
+                }
+            } else {
+                alert(bp_media_main_strings.select_media);
+                jQuery(this).siblings('.bp-media-ajax-spinner').hide();
+                jQuery(this).prop('disabled',false);
+                jQuery(this).removeClass('disabled');
+            }
+        } else {
+            alert(bp_media_main_strings.select_action);
+            jQuery(this).siblings('.bp-media-ajax-spinner').hide();
+            jQuery(this).prop('disabled',false);
+            jQuery(this).removeClass('disabled');
+            return false;
+        }
+            
+    });
+    
+    jQuery('#bp-media-delete-ui').on('click','#bp-media-delete-media',function(){
+        jQuery(this).siblings('.bp-media-ajax-spinner').show();
+        jQuery(this).prop('disabled',true);
+        jQuery(this).addClass('disabled');
+        $media = new Array();
+        jQuery('input:checkbox[name="move"]:checked').each(function(){
+            $media.push(jQuery(this).val());
+        });
+        if ($media.length) {
+            if(confirm(bp_media_main_strings.delete_selected_media)){
+                var data = {
+                    action: 'bp_media_delete_selected_media',
+                    media: $media
+                };
+                jQuery.post(bp_media_vars.ajaxurl, data, function(response) {
+                    if(response.length==0) {
+                        jQuery('.item-list-tabs:last').after('<div id="message" class="error"><p>'+bp_media_main_strings.something_went_wrong+'</p></div>');
+                    } else {
+                        location.reload();
+                    }
+                });
+            } else {
+                jQuery(this).siblings('.bp-media-ajax-spinner').hide();
+                jQuery(this).prop('disabled',false);
+                jQuery(this).removeClass('disabled');
+                return false;
+            }
+        } else {
+            alert(bp_media_main_strings.select_media);
+            jQuery(this).siblings('.bp-media-ajax-spinner').hide();
+            jQuery(this).prop('disabled',false);
+            jQuery(this).removeClass('disabled');
+        }
     });
 
     jQuery('#bp-media-upload-ui').bind('dragover', function(e){
@@ -67,9 +279,30 @@ jQuery(document).ready(function(){
                 jQuery('.bp-media-gallery').append(response);
         });
     });
+    
+    jQuery('#bp-media-show-more-sc').click(function(e){
+        e.preventDefault();
+        $this = jQuery(this);
+        $this.prop("disabled", true);
+        var data = {
+            action: 'bp_media_load_more_sc',
+            page: parseInt($this.attr('data-page'))+1,
+            media:$this.attr('data-media'),
+            count:$this.attr('data-count')
+        };
+        jQuery.get(bp_media_vars.ajaxurl, data, function(response) {
+            if(response.length==0) {
+                jQuery('#bp-media-show-more-sc').parent().remove();
+            }else{
+                $this.prop("disabled", false);
+                $this.attr('data-page',parseInt($this.attr('data-page'))+1);
+                jQuery('.bp-media-gallery').append(response);
+            }
+        });
+    });
     setTimeout(function(){
         jQuery('.media album_updated .delete-activity,.media_upload .delete-activity').unbind('click').click(function(e){
-            if(confirm('Are you sure you want to delete this activity and associated media?')){
+            if(confirm(bp_media_main_strings.delete_activity_media)){
                 return true;
             }
             else{
@@ -99,12 +332,7 @@ jQuery(document).ready(function(){
     });
 
     if ( bp_media_vars.lightbox > 0 ) {
-        jQuery('#bp-media-list').on('click','li a',function(e){
-            e.preventDefault();
-            $current = jQuery(this);
-            load_media($current);
-        });
-        jQuery('.widget-item-listing').on('click','li a',function(e){
+        jQuery('#bp-media-list,.widget-item-listing,.bp-media-sc-list').on('click','li a',function(e){
             e.preventDefault();
             $current = jQuery(this);
             load_media($current);
@@ -119,7 +347,6 @@ jQuery(document).ready(function(){
             e.preventDefault();
             if(!$current.parent().hasClass('bp_media_content')){
                 $next_current = $current.closest('li').next().find('a');
-                console.log(jQuery('#bp-media-show-more').length);
                 if($next_current.length<1){
                     if(jQuery('#bp-media-show-more').length>0){
                         var args = load_more_data();
@@ -235,6 +462,10 @@ jQuery(document).ready(function(){
             });
         }
         function load_more_data(){
+            if (jQuery('#bp-media-show-more').attr('data-move') == 1)
+                $move = 1;
+            else
+                $move = 0;
             var data = {
                 action: 'bp_media_load_more',
                 page:++bp_media_vars.page,
@@ -242,7 +473,8 @@ jQuery(document).ready(function(){
                 action_variables : bp_media_vars.action_variables,
                 displayed_user : bp_media_vars.displayed_user,
                 loggedin_user : bp_media_vars.loggedin_user,
-                current_group :	bp_media_vars.current_group
+                current_group :	bp_media_vars.current_group,
+                move : $move
             };
             return data;
         }
@@ -288,10 +520,8 @@ jQuery(document).ready(function(){
                 );
             }
 
-
             /* Favoriting activity stream items */
             if ( target.hasClass('fav') || target.hasClass('unfav') ) {
-                console.log('hua');
                 event.preventDefault();
                 var type = target.hasClass('fav') ? 'fav' : 'unfav';
                 var parent = target.closest('.activity_update');
