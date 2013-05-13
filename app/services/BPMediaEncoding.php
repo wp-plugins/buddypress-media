@@ -31,8 +31,12 @@ class BPMediaEncoding {
                             $this->nearing_usage_limit($usage_info);
                         elseif ($usage_info[$this->api_key]->remaining > 524288000 && bp_get_option('bp-media-encoding-usage-limit-mail'))
                             bp_update_option('bp-media-encoding-usage-limit-mail', 0);
-                        add_filter('bp_media_transcoder', array($this, 'transcoder'), 10, 2);
-                        add_filter('bp_media_plupload_files_filter', array($this, 'allowed_types'));
+                        if (!class_exists('BPMediaFFMPEG') && !class_exists('BPMediaKaltura'))
+                            add_filter('bp_media_transcoder', array($this, 'transcoder'), 10, 2);
+                        $blacklist = array('localhost', '127.0.0.1');
+                        if (!in_array($_SERVER['HTTP_HOST'], $blacklist)) {
+                            add_filter('bp_media_plupload_files_filter', array($this, 'allowed_types'));
+                        }
                     }
                 }
             }
@@ -48,12 +52,24 @@ class BPMediaEncoding {
         add_action('wp_ajax_bp_media_unsubscribe_encoding_service', array($this, 'unsubscribe_encoding'));
         add_action('wp_ajax_bp_media_hide_encoding_notice', array($this, 'hide_encoding_notice'), 1);
         add_action('wp_ajax_bp_media_enter_api_key', array($this, 'enter_api_key'), 1);
+        add_action('wp_ajax_bp_media_disable_encoding', array($this, 'disable_encoding'), 1);
     }
 
     function transcoder($class, $type) {
         switch ($type) {
             case 'video':
             case 'audio':
+                $blacklist = array('localhost', '127.0.0.1');
+                if (in_array($_SERVER['HTTP_HOST'], $blacklist)) {
+                    return $class;
+                }
+                
+                if (isset($_FILES['bp_media_file'])) {
+                    $ext = end(explode(".", $_FILES['bp_media_file']["name"]));
+                    if (in_array($_FILES['bp_media_file']['type'], array('audio/mp3', 'video/mp4')) || in_array($ext, array('mp3', 'mp4'))) {
+                        return $class;
+                    }
+                }
                 return 'BPMediaEncodingTranscoder';
             default:
                 return $class;
@@ -169,20 +185,20 @@ class BPMediaEncoding {
     }
 
     public function save_api_key() {
-        if ( isset($_GET['api_key_updated']) && $_GET['api_key_updated'] ) {
+        if (isset($_GET['api_key_updated']) && $_GET['api_key_updated']) {
             if (is_multisite()) {
                 add_action('network_admin_notices', array($this, 'successfully_subscribed_notice'));
             }
             add_action('admin_notices', array($this, 'successfully_subscribed_notice'));
         }
         if (isset($_GET['apikey']) && is_admin() && isset($_GET['page']) && ($_GET['page'] == 'bp-media-encoding') && $this->is_valid_key($_GET['apikey'])) {
-            if ( $this->api_key && !(isset($_GET['update']) && $_GET['update']) ) {
-                $unsubscribe_url = trailingslashit($this->api_url) . 'api/cancel/'.$this->api_key;
-                wp_remote_post($unsubscribe_url, array('timeout' => 120, 'body' => array('note' => 'Direct URL Input (API Key: '.$_GET['apikey'].')')));
+            if ($this->api_key && !(isset($_GET['update']) && $_GET['update'])) {
+                $unsubscribe_url = trailingslashit($this->api_url) . 'api/cancel/' . $this->api_key;
+                wp_remote_post($unsubscribe_url, array('timeout' => 120, 'body' => array('note' => 'Direct URL Input (API Key: ' . $_GET['apikey'] . ')')));
             }
             bp_update_option('bp-media-encoding-api-key', $_GET['apikey']);
             $usage_info = $this->update_usage($_GET['apikey']);
-            $return_page = add_query_arg(array('page' => 'bp-media-encoding','api_key_updated' => $usage_info->plan->name), (is_multisite() ? network_admin_url('admin.php') : admin_url('admin.php')));
+            $return_page = add_query_arg(array('page' => 'bp-media-encoding', 'api_key_updated' => $usage_info->plan->name), (is_multisite() ? network_admin_url('admin.php') : admin_url('admin.php')));
             wp_safe_redirect($return_page);
         }
     }
@@ -202,7 +218,7 @@ class BPMediaEncoding {
             <p><?php printf(__('We have launched a new Audio/Video encoding service for BuddyPress Media. You can <a href="%s">activate it for free</a>.', 'buddypress-media'), $link); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button class="bpm-hide-encoding-notice button-secondary" type="button" ><?php _e('Hide Message', 'buddypress-media') ?></button></p>
         </div><?php
     }
-    
+
     public function successfully_subscribed_notice() {
         ?>
         <div class="updated">
@@ -210,15 +226,19 @@ class BPMediaEncoding {
         </div><?php
     }
 
-    public function encoding_subscription_form($name = 'No Name', $price = '0') {
-        if ( $this->api_key )
+    public function encoding_subscription_form($name = 'No Name', $price = '0', $force = false) {
+        if ($this->api_key)
             $this->update_usage($this->api_key);
         $action = $this->sandbox_testing ? 'https://sandbox.paypal.com/cgi-bin/webscr' : 'https://www.paypal.com/cgi-bin/webscr';
         $return_page = add_query_arg(array('page' => 'bp-media-encoding'), (is_multisite() ? network_admin_url('admin.php') : admin_url('admin.php')));
 
         $usage_details = bp_get_option('bp-media-encoding-usage');
-        if (isset($usage_details[$this->api_key]->plan->name) && (strtolower($usage_details[$this->api_key]->plan->name) == strtolower($name)) && $usage_details[$this->api_key]->sub_status ) {
-            $form = '<button type="submit" class="button bpm-unsubscribe">' . __('Unsubscribe', 'buddypress-media') . '</button>';
+        if (isset($usage_details[$this->api_key]->plan->name) && (strtolower($usage_details[$this->api_key]->plan->name) == strtolower($name)) && $usage_details[$this->api_key]->sub_status && !$force) {
+            $form = '<button data-plan="' . $name . '" data-price="' . $price . '" type="submit" class="button bpm-unsubscribe">' . __('Unsubscribe', 'buddypress-media') . '</button>';
+            $form .= '<div id="bpm-unsubscribe-dialog" title="Unsubscribe">
+  <p>Just to improve our service we would like to know the reason for you to leave us.</p>
+  <p><textarea rows="3" cols="36" id="bpm-unsubscribe-note"></textarea></p>
+</div>';
         } else {
             $form = '<form method="post" action="' . $action . '" class="paypal-button" target="_top">
                         <input type="hidden" name="button" value="subscribe">
@@ -265,7 +285,7 @@ class BPMediaEncoding {
         $content = '';
         if ($usage_details && isset($usage_details[$this->api_key]->status) && $usage_details[$this->api_key]->status) {
             if (isset($usage_details[$this->api_key]->plan->name))
-                $content .= '<p><strong>' . __('Current Plan', 'buddypress-media') . ':</strong> ' . $usage_details[$this->api_key]->plan->name . ($usage_details[$this->api_key]->sub_status?'':' ('.__('Unsubscribed','buddypress-media').')').'</p>';
+                $content .= '<p><strong>' . __('Current Plan', 'buddypress-media') . ':</strong> ' . $usage_details[$this->api_key]->plan->name . ($usage_details[$this->api_key]->sub_status ? '' : ' (' . __('Unsubscribed', 'buddypress-media') . ')') . '</p>';
             if (isset($usage_details[$this->api_key]->used))
                 $content .= '<p><span class="encoding-used"></span><strong>' . __('Used', 'buddypress-media') . ':</strong> ' . (($used_size = size_format($usage_details[$this->api_key]->used, 2)) ? $used_size : '0MB') . '</p>';
             if (isset($usage_details[$this->api_key]->remaining))
@@ -286,9 +306,10 @@ class BPMediaEncoding {
         ?>
         <p><?php _e('BuddyPress Media team has started offering an audio/video encoding service.', 'buddypress-media'); ?></p>
         <p>
-            <label for="new-api-key"><?php _e('Enter API KEY','buddypress-media'); ?></label>
+            <label for="new-api-key"><?php _e('Enter API KEY', 'buddypress-media'); ?></label>
             <input id="new-api-key" type="text" name="new-api-key" value="<?php echo $this->api_key; ?>" size="60" />
             <input type="submit" id="api-key-submit" name="api-key-submit" value="Submit" class="button-primary" />
+            <?php if ($this->api_key) { ?><br /><br /><input type="submit" id="disable-encoding" name="disable-encoding" value="Disable Encoding" class="button-secondary" /><?php } ?>
         </p>
         <table  class="bp-media-encoding-table widefat fixed" cellspacing="0">
             <tbody>
@@ -351,11 +372,11 @@ class BPMediaEncoding {
         if (isset($usage_details[$this->api_key]->plan->name) && (strtolower($usage_details[$this->api_key]->plan->name) == 'free')) {
             echo '<button disabled="disabled" type="submit" class="encoding-try-now button button-primary">' . __('Current Plan', 'buddypress-media') . '</button>';
         } else {
-            ?>
+                ?>
                         <form id="encoding-try-now-form" method="get" action="">
                             <button type="submit" class="encoding-try-now button button-primary"><?php _e('Try Now', 'buddypress-media'); ?></button>
                         </form><?php }
-        ?>
+            ?>
                 </td>
                 <td><?php echo $this->encoding_subscription_form('silver', 9.0) ?></td>
                 <td><?php echo $this->encoding_subscription_form('gold', 99.0) ?></td>
@@ -481,29 +502,33 @@ class BPMediaEncoding {
         }
 
         public function unsubscribe_encoding() {
-            $unsubscribe_url = trailingslashit($this->api_url) . 'api/cancel/'.$this->api_key;
-            $unsubscribe_page = wp_remote_post($unsubscribe_url, array('timeout' => 120, 'body' => array('note' => '')));
+            $unsubscribe_url = trailingslashit($this->api_url) . 'api/cancel/' . $this->api_key;
+            $unsubscribe_page = wp_remote_post($unsubscribe_url, array('timeout' => 120, 'body' => array('note' => $_GET['note'])));
             if (!is_wp_error($unsubscribe_page) && (!isset($unsubscribe_page['headers']['status']) || (isset($unsubscribe_page['headers']['status']) && ($unsubscribe_page['headers']['status'] == 200)))) {
                 $subscription_info = json_decode($unsubscribe_page['body']);
-                if (isset($subscription_info->status) && $subscription_info->status ) {
-                    echo json_encode(array('updated' => __('Your subscription was cancelled successfully','buddypress-media')));
-                } else {
-                    echo json_encode(array('error' => __('Your subscription could not be cancelled','buddypress-media')));
+                if (isset($subscription_info->status) && $subscription_info->status) {
+                    echo json_encode(array('updated' => __('Your subscription was cancelled successfully', 'buddypress-media'), 'form' => $this->encoding_subscription_form($_GET['plan'], $_GET['price'])));
                 }
             } else {
-                echo json_encode(array('error' => __('Something went wrong please try again.','buddypress-media')));
-            }
-            die();
-        }
-        
-        public function enter_api_key(){
-            if( isset($_GET['apikey']) ) {
-                echo json_encode(array('apikey' => $_GET['apikey']));
-            } else {
-                echo json_encode(array('error' => __('Please enter the api key.','buddypress-media')));
+                echo json_encode(array('error' => __('Something went wrong please try again.', 'buddypress-media')));
             }
             die();
         }
 
+        public function enter_api_key() {
+            if (isset($_GET['apikey'])) {
+                echo json_encode(array('apikey' => $_GET['apikey']));
+            } else {
+                echo json_encode(array('error' => __('Please enter the api key.', 'buddypress-media')));
+            }
+            die();
+        }
+
+        public function disable_encoding() {
+            bp_update_option('bp-media-encoding-api-key', '');
+            _e('Encoding disabled successfully.', 'buddypress-media');
+            die();
+        }
+
     }
-?>
+    ?>
