@@ -3,21 +3,21 @@ jQuery(document).ready(function($){
     /* Linkback */
     jQuery('#spread-the-word').on('click','#bp-media-add-linkback',function(){
         var data = {
-            action: 'bp_media_linkback',
+            action: 'rtmedia_linkback',
             linkback: jQuery('#bp-media-add-linkback:checked').length
         };
-        jQuery.post(bp_media_admin_ajax,data,function(response){
+        jQuery.post(rtmedia_admin_ajax,data,function(response){
             });
     })
 
     /* Fetch Feed */
-    var bp_media_news_section = jQuery('#latest-news');
-    if(bp_media_news_section.length>0){
+    var rtmedia_news_section = jQuery('#latest-news');
+    if(rtmedia_news_section.length>0){
         var data = {
-            action: 'bp_media_fetch_feed'
+            action: 'rtmedia_fetch_feed'
         };
-        jQuery.post(bp_media_admin_ajax,data,function(response){
-            bp_media_news_section.find('.inside').html(response);
+        jQuery.post(rtmedia_admin_ajax,data,function(response){
+            rtmedia_news_section.find('.inside').html(response);
         });
     }
 
@@ -27,7 +27,7 @@ jQuery(document).ready(function($){
             jQuery('#bp_media_settings_form .bp-media-metabox-holder').html()
             jQuery('#bp_media_settings_form .bp-media-metabox-holder').html('<div class="support_form_loader"></div>');
             var data = {
-                action: 'bp_media_select_request',
+                action: 'rtmedia_select_request',
                 form: jQuery(this).val()
             };
 
@@ -45,7 +45,7 @@ jQuery(document).ready(function($){
             jQuery('#bp_media_settings_form .bp-media-metabox-holder').html()
             jQuery('#bp_media_settings_form .bp-media-metabox-holder').html('<div class="support_form_loader"></div>');
             var data = {
-                action: 'bp_media_cancel_request'
+                action: 'rtmedia_cancel_request'
             };
 
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
@@ -60,7 +60,7 @@ jQuery(document).ready(function($){
     jQuery('.bp-media-support').on('submit', '#bp_media_settings_form', function(e){
         e.preventDefault();
         var data = {
-            action: 'bp_media_submit_request',
+            action: 'rtmedia_submit_request',
             form_data: jQuery('form').serialize()
         };
 
@@ -73,16 +73,16 @@ jQuery(document).ready(function($){
 
     jQuery(document).on('click',"#bpm-services .encoding-try-now",function(e){
         e.preventDefault();
-        if(confirm(bp_media_admin_strings.are_you_sure)){
-            jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+bp_media_admin_url+'images/wpspin_light.gif" />')
+        if(confirm(rtmedia_admin_strings.are_you_sure)){
+            jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+rtmedia_admin_url+'images/wpspin_light.gif" />')
             var data = {
-                action: 'bp_media_free_encoding_subscribe'
+                action: 'rtmedia_free_encoding_subscribe'
             };
 
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
             jQuery.getJSON(ajaxurl, data, function(response) {
                 if(response.error===undefined && response.apikey){
-                        document.location.href = document.URL+'&apikey='+response.apikey;
+                    document.location.href = document.URL+'&apikey='+response.apikey;
                 }else{
                     jQuery('.encoding-try-now').next().remove();
                     jQuery('#settings-error-encoding-error').remove();
@@ -94,9 +94,9 @@ jQuery(document).ready(function($){
 
     jQuery(document).on('click','#api-key-submit',function(e){
         e.preventDefault();
-        jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+bp_media_admin_url+'images/wpspin_light.gif" />')
+        jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+rtmedia_admin_url+'images/wpspin_light.gif" />')
         var data = {
-            action: 'bp_media_enter_api_key',
+            action: 'rtmedia_enter_api_key',
             apikey: jQuery('#new-api-key').val()
         };
 
@@ -119,10 +119,10 @@ jQuery(document).ready(function($){
 
     jQuery(document).on('click','#disable-encoding',function(e){
         e.preventDefault();
-        if ( confirm(bp_media_admin_strings.disable_encoding )) {
-            jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+bp_media_admin_url+'images/wpspin_light.gif" />')
+        if ( confirm(rtmedia_admin_strings.disable_encoding )) {
+            jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+rtmedia_admin_url+'images/wpspin_light.gif" />')
             var data = {
-                action: 'bp_media_disable_encoding'
+                action: 'rtmedia_disable_encoding'
             };
 
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
@@ -136,7 +136,7 @@ jQuery(document).ready(function($){
                     jQuery('#new-api-key').val('');
                 }else{
                     jQuery('#settings-error-encoding-disabled').remove();
-                    jQuery('h2:first').after('<div class="error" id="settings-error-encoding-disabled"><p>'+bp_media_admin_strings.something_went_wrong+'</p></div>');
+                    jQuery('h2:first').after('<div class="error" id="settings-error-encoding-disabled"><p>'+rtmedia_admin_strings.something_went_wrong+'</p></div>');
                 }
             });
         }
@@ -151,9 +151,9 @@ jQuery(document).ready(function($){
             buttons: {
                 Unsubscribe : function() {
                     jQuery( this ).dialog( "close" );
-                    jQuery('.bpm-unsubscribe').after('<img style="margin: 0 0 0 10px" src="'+bp_media_admin_url+'images/wpspin_light.gif" />')
+                    jQuery('.bpm-unsubscribe').after('<img style="margin: 0 0 0 10px" src="'+rtmedia_admin_url+'images/wpspin_light.gif" />')
                     var data = {
-                        action: 'bp_media_unsubscribe_encoding_service',
+                        action: 'rtmedia_unsubscribe_encoding_service',
                         note: jQuery('#bpm-unsubscribe-note').val(),
                         plan: jQuery('.bpm-unsubscribe').attr('data-plan'),
                         price: jQuery('.bpm-unsubscribe').attr('data-price')
@@ -197,7 +197,7 @@ jQuery(document).ready(function($){
                 jQuery('#rtprivacyinstaller span.finished').html(parseInt(finished)+data.count);
                 if ( redirect ) {
                     jQuery.post(ajaxurl, {
-                        action: 'bp_media_privacy_redirect'
+                        action: 'rtmedia_privacy_redirect'
                     }, function(response){
                         window.location = settings_url;
                     });
@@ -236,7 +236,7 @@ jQuery(document).ready(function($){
                     }
                     newvals = {
                         'page':i,
-                        'action':'bp_media_privacy_install',
+                        'action':'rtmedia_privacy_install',
                         'count':$count,
                         'values':$values
                     }
@@ -282,8 +282,8 @@ jQuery(document).ready(function($){
                 jQuery('#bpmedia-bpalbumimporter .bp-album-users span.finished').html(parseInt(response.users));
                 if ( favorites ) {
                     favorite_data = {
-                        'action':'bp_media_bp_album_import_favorites'
-                    };
+                        'action':'rtmedia_rt_album_import_favorites'
+                    }
                     jQuery.post(ajaxurl,favorite_data,function(response){
                         if(response.favorites!==0||response.favorites!=='0'){
                             if(!jQuery('.bp-album-favorites').length)
@@ -303,7 +303,7 @@ jQuery(document).ready(function($){
                                 }
 
                                 newvals = {
-                                    'action':'bp_media_bp_album_import_step_favorites',
+                                    'action':'rtmedia_rt_album_import_step_favorites',
                                     'offset':(i-1)*1,
                                     'redirect':i==response.users
                                 }
@@ -353,9 +353,9 @@ jQuery(document).ready(function($){
     jQuery('#bpmedia-bpalbumimport-cleanup').click(function(e){
         e.preventDefault();
         jQuery.post(ajaxurl, {
-            action: 'bp_media_bp_album_cleanup'
+            action: 'rtmedia_rt_album_cleanup'
         }, function(response){
-            window.location = settings_bp_album_import_url;
+            window.location = settings_rt_album_import_url;
         });
 
     });
@@ -384,7 +384,7 @@ jQuery(document).ready(function($){
         }
         wp_admin_url = ajaxurl.replace('admin-ajax.php','');
         if (!jQuery('.bpm-ajax-loader').length)
-            jQuery(this).after(' <img class="bpm-ajax-loader" src="'+wp_admin_url+'images/wpspin_light.gif" /> <strong>'+bp_media_admin_strings.no_refresh+'</strong>');
+            jQuery(this).after(' <img class="bpm-ajax-loader" src="'+wp_admin_url+'images/wpspin_light.gif" /> <strong>'+rtmedia_admin_strings.no_refresh+'</strong>');
 
 
         $progress_parent = jQuery('#bpmedia-bpalbumimport');
@@ -408,7 +408,7 @@ jQuery(document).ready(function($){
             }
             newvals = {
                 'page':i,
-                'action':'bp_media_bp_album_import',
+                'action':'rtmedia_rt_album_import',
                 'count':$count,
                 'values':$values
             }
@@ -437,7 +437,7 @@ jQuery(document).ready(function($){
     jQuery('#video-transcoding-main-container').on('click','.video-transcoding-survey',function(e){
         e.preventDefault();
         var data = {
-            action: 'bp_media_convert_videos_form',
+            action: 'rtmedia_convert_videos_form',
             email: jQuery('.email').val(),
             url: jQuery('.url').val(),
             choice: jQuery('input[name="choice"]:checked').val(),
@@ -453,20 +453,20 @@ jQuery(document).ready(function($){
         e.preventDefault();
         $bpalbum = jQuery(this);
         var data = {
-            action: 'bp_media_bp_album_deactivate'
+            action: 'rtmedia_rt_album_deactivate'
         }
         jQuery.get(ajaxurl, data, function(response) {
             if(response)
                 location.reload();
             else
-                $bpalbum.parent().after('<p>'+bp_media_admin_strings.something_went_wrong+'</p>');
+                $bpalbum.parent().after('<p>'+rtmedia_admin_strings.something_went_wrong+'</p>');
         });
     });
 
     jQuery('.updated').on('click','.bpm-hide-encoding-notice',function(){
-        jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+bp_media_admin_url+'images/wpspin_light.gif" />');
+        jQuery(this).after('<img style="margin: 0 0 0 10px" src="'+rtmedia_admin_url+'images/wpspin_light.gif" />');
         var data ={
-            action: 'bp_media_hide_encoding_notice'
+            action: 'rtmedia_hide_encoding_notice'
         }
         jQuery.post(ajaxurl,data,function(response){
             if ( response ) {
@@ -479,17 +479,17 @@ jQuery(document).ready(function($){
     jQuery("#bpm-settings-tabs,#bpm-addons").sliderTabs({
         autoplay: false,
         mousewheel: false,
-        defaultTab: 1
+        defaultTab: manageHash()
     });
 
-	if(jQuery('#privacy_enabled').is(":checked")) {
+	if(jQuery('#rtmedia-privacy-enable').is(":checked")) {
 		jQuery(".privacy-driven-disable label input").prop("disabled",false);
         jQuery(".privacy-driven-disable label .rt-switch").bootstrapSwitch("setActive",true);
 	} else {
 		jQuery(".privacy-driven-disable label input").prop("disabled",true);
         jQuery(".privacy-driven-disable label .rt-switch").bootstrapSwitch("setActive",false);
 	}
-	jQuery('#privacy_enabled').on("click", function(e) {
+	jQuery('#rtmedia-privacy-enable').on("click", function(e) {
 		if(jQuery(this).is(":checked")) {
 			jQuery(".privacy-driven-disable label input").prop("disabled",false);
             jQuery(".privacy-driven-disable label .rt-switch").bootstrapSwitch("setActive",true);
@@ -499,13 +499,39 @@ jQuery(document).ready(function($){
 		}
 	});
 
-	jQuery("[data-toggle='switch']").wrap('<div class="rt-switch" />').parent().bootstrapSwitch();
+	var onData = '';
+	var offData = '';
+	if(rtmedia_on_label!==undefined)
+		onData = 'data-on-label="'+rtmedia_on_label+'"';
+	if(rtmedia_off_label!==undefined)
+		offData = 'data-off-label="'+rtmedia_off_label+'"';
+	jQuery("[data-toggle='switch']").wrap('<div class="rt-switch" '+onData+' '+offData+' />').parent().bootstrapSwitch();
 
     try {
-		jQuery('bpm-show-tooltip').powerTip({
+		jQuery('.rtm-show-tooltip').powerTip({
 			followMouse: true
 		});
     } catch(e) {
         // no tooltip is defined
-    }
+	}
+	$(".rtmedia-tab-title").click(function(){
+		hash = $(this).attr('href');
+		window.location.hash = hash.substring(1,hash.length);
+	});
+	function manageHash() {
+		if(window.location.hash===undefined || window.location.hash==='')
+			window.location.hash = 'rtmedia-general';
+
+
+		hash = window.location.hash;
+		$('#tab-'+hash.substr(1,hash.length)).click();
+		if($('#tab-'+hash.substr(1,hash.length)).length < 1)
+			return 1;
+		return $('#tab-'+hash.substr(1,hash.length)).parent().index()+1
+	}
+
+	$(window).hashchange(function(e,data) {
+		e.preventDefault();
+		manageHash();
+	});
 });

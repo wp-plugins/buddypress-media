@@ -117,16 +117,16 @@ jQuery(document).ready(function(){
         });
     });
 
-    jQuery('#bp-media-move-merge-ui,#bp-media-delete-ui').on('click','.select-all', function(e){
+    jQuery('.rtmedia-container').on('click','.select-all', function(e){
         e.preventDefault();
-        jQuery('#bp-media-list input').each(function(){
+        jQuery('.rtmedia-list input').each(function(){
             jQuery(this).prop('checked',true);
         });
     });
 
-    jQuery('#bp-media-move-merge-ui,#bp-media-delete-ui').on('click','.unselect-all', function(e){
+    jQuery('.rtmedia-container').on('click','.unselect-all', function(e){
         e.preventDefault();
-        jQuery('#bp-media-list input').each(function(){
+        jQuery('.rtmedia-list input').each(function(){
             jQuery(this).prop('checked',false);
         });
     });
@@ -823,4 +823,7 @@ jQuery(document).ready(function(){
 
     }
 
+	jQuery('.rtmedia-item-thumbnail a').magnificPopup({type:'ajax'});
+
 });
+

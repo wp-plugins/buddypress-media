@@ -145,6 +145,12 @@ if(!class_exists("rtForm")) {
 			return "";
 		}
 
+		private function embedd_misc_attributes($misc) {
+			$html = '';
+
+			return $html;
+		}
+
 		private function processAttributes($element, $attributes, $container = false) {
 
 			/* generating the id on its own if not provided otherwise taken from the parameter provided */
@@ -169,6 +175,9 @@ if(!class_exists("rtForm")) {
 				else
 					$html .= $this->embedd_class($element);
 			}
+
+			if(isset($attributes['misc']) && is_array($attributes['misc']))
+				$html.= $this->embedd_misc_attributes($attributes['misc']);
 
 			$html .= $this->generate_element_value($element, $attributes);
 
@@ -205,7 +214,7 @@ if(!class_exists("rtForm")) {
 					}
 				}
 
-				$checked = ($attrib['checked']) ? "checked=checked" : "";
+				$checked = (isset($attrib['checked']) && $attrib['checked']) ? "checked=checked" : "";
 				if( isset($attrib['switch']) && $attrib['switch'])
 					$switch = 'data-toggle="switch"';
 				else
@@ -220,7 +229,7 @@ if(!class_exists("rtForm")) {
 										break;
 					case "rtSelect" :
 										$selected = ($attrib['selected']) ? "selected=selected" : "";
-										$data = '<option value="' . $attrib['value'] . '"' . $selected . '>' . $attrib['label'] . '</option><br />';
+										$data = '<option value="' . $attrib['value'] . '"' . $selected . '>' . $attrib['key'] . '</option><br />';
 										break;
 				}
 
@@ -536,7 +545,13 @@ if(!class_exists("rtForm")) {
 				$element = 'rtSelect';
 				$html = '<select ';
 
-				$html .= $this->generate_element_id($element, $attributes['id']) . ' ';
+				if(isset($attributes['id']))
+					$id = $attributes['id'];
+				else {
+					$id = $element.$this->get_default_id ($element);
+					$this->update_default_id($element);
+				}
+				$html .= $this->generate_element_id($element, $id) . ' ';
 				$multiple = ( isset($attributes['multiple']) && $attributes['multiple'] ) ? true : false;
 				$name = ( isset($attributes['name']) ) ? $attributes['name'] : $element;
 				$html .= $this->generate_element_name($element, $multiple, $name) . ' ';
