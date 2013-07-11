@@ -523,7 +523,24 @@ class RTMedia {
 				//'query'		=> false
 		);
 		global $rtmedia_nav;
-		$class_construct = apply_filters( 'rtmedia_class_construct', $class_construct );
+		
+                /** Legacy code for Add-ons **/
+                
+                $bp_class_construct = apply_filters('bpmedia_class_construct', array());
+                foreach ($bp_class_construct as $classname => $global_scope) {
+                    $class = 'BPMedia' . ucfirst($classname);
+                    if (class_exists($class)) {
+                        if ($global_scope == true) {
+                            global ${'bp_media_' . $classname};
+                            ${'bp_media_' . $classname} = new $class();
+                        } else {
+                            new $class();
+                        }
+                    }
+                }
+                /** ------------------- **/
+                
+                $class_construct = apply_filters( 'rtmedia_class_construct', $class_construct );
 
 		foreach ( $class_construct as $key => $global_scope ) {
 			$classname = '';
@@ -545,6 +562,7 @@ class RTMedia {
 			}
 		}
 
+                
 		global $rtmedia_buddypress_activity;
 		$rtmedia_buddypress_activity = new RTMediaBuddyPressActivity();
 		$media = new RTMediaMedia();
@@ -553,8 +571,11 @@ class RTMedia {
 
 		global $rtmedia_ajax;
 		$rtmedia_ajax = new RTMediaAJAX();
-
+                
+                do_action( 'bp_media_init' ); // legacy For plugin using this actions
 		do_action( 'rtmedia_init' );
+                
+                
 	}
 
 	/**
@@ -631,6 +652,7 @@ class RTMedia {
 		wp_enqueue_style( 'rtmedia-magnific', RTMEDIA_URL . 'lib/magnific/magnific.css', '', RTMEDIA_VERSION );
 		wp_enqueue_script( 'rtmedia-magnific', RTMEDIA_URL . 'lib/magnific/magnific.js', '', RTMEDIA_VERSION );
 		wp_localize_script( 'rtmedia-main', 'rtmedia_ajax_url', admin_url( 'admin-ajax.php' ) );
+                wp_localize_script( 'rtmedia-main', 'rtmedia_lightbox_enabled',strval($this->options["general_enableLightbox"]));
 	}
 
 	function set_bp_bar() {
