@@ -3,7 +3,7 @@
   Plugin Name: rtMedia for WordPress, BuddyPress and bbPress
   Plugin URI: http://rtcamp.com/buddypress-media/?utm_source=dashboard&utm_medium=plugin&utm_campaign=buddypress-media
   Description: This plugin adds missing media rich features like photos, videos and audio uploading to BuddyPress which are essential if you are building social network, seriously!
-  Version: 3.0.0
+  Version: 3.0.1
   Author: rtCamp
   Text Domain: rtmedia
   Author URI: http://rtcamp.com/?utm_source=dashboard&utm_medium=plugin&utm_campaign=buddypress-media
@@ -24,6 +24,16 @@ if ( ! defined( 'RTMEDIA_PATH' ) ){
 	 */
 	define( 'RTMEDIA_PATH', plugin_dir_path( __FILE__ ) );
 }
+
+if ( ! defined( 'BP_MEDIA_PATH' ) ){
+
+	/**
+	 *  Legacy support
+	 *
+	 */
+	define( 'BP_MEDIA_PATH', RTMEDIA_PATH );
+}
+
 
 if ( ! defined( 'RTMEDIA_URL' ) ){
 
@@ -55,7 +65,7 @@ function rtmedia_autoloader( $class_name ) {
 	$rtlibpath = array(
 		'app/services/' . $class_name . '.php',
 		'app/helper/' . $class_name . '.php',
-                'app/helper/db/' . $class_name . '.php',
+        'app/helper/db/' . $class_name . '.php',
 		'app/admin/' . $class_name . '.php',
 		'app/main/interactions/' . $class_name . '.php',
 		'app/main/routers/' . $class_name . '.php',
@@ -70,17 +80,11 @@ function rtmedia_autoloader( $class_name ) {
 		'app/main/deprecated/' . $class_name . '.php',
 		'app/main/contexts/' . $class_name . '.php',
 		'app/main/' . $class_name . '.php',
-		'app/main/activity/' . $class_name . '.php',
-		'app/main/profile/' . $class_name . '.php',
-		'app/main/group/' . $class_name . '.php',
-		'app/main/query/' . $class_name . '.php',
-                'app/main/privacy/' . $class_name . '.php',
-		'app/main/group/dummy/' . $class_name . '.php',
 		'app/main/includes/' . $class_name . '.php',
 		'app/main/widgets/' . $class_name . '.php',
 		'app/main/upload/' . $class_name . '.php',
 		'app/main/upload/processors/' . $class_name . '.php',
-		 'app/main/template/' . $class_name . '.php',
+		'app/main/template/' . $class_name . '.php',
 		'app/log/' . $class_name . '.php',
 		'app/importers/' . $class_name . '.php',
 	);
