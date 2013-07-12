@@ -476,6 +476,9 @@ function rtmedia_pagination_next_link() {
         $link .= $site_url . $post->post_name . '/';
     }
     $link .= 'media/';
+    if(isset($rtmedia_query->media_query["album_id"]) && intval($rtmedia_query->media_query["album_id"]) > 0){
+        $link .= $rtmedia_query->media_query["album_id"] . "/";
+    }
     if (isset($rtmedia_query->action_query->media_type)) {
         if (in_array($rtmedia_query->action_query->media_type, array("photo", "music", "video", "album")))
             $link .= $rtmedia_query->action_query->media_type . '/';
@@ -775,7 +778,7 @@ function rtmedia_album_edit() {
             <?php wp_nonce_field('rtmedia_delete_album_' . $rtmedia_query->media_query['album_id'], 'rtmedia_delete_album_nonce'); ?>
             <input type="submit" name="album-delete" value="<?php _e('Delete', 'rtmedia'); ?>" />
         </form>
-        <?php 
+        <?php
         if( $album_list = rtmedia_user_album_list()){ ?>
                 <input type="button" class="button rtmedia-merge" value="<?php _e('Merge', 'rtmedia'); ?>" />
                 <div class="rtmedia-merge-container">
@@ -824,4 +827,7 @@ function is_rtmedia_album_enable(){
     }
     return false;
 }
-            
+
+function rtmedia_load_template(){
+	include(RTMediaTemplate::locate_template());
+}
