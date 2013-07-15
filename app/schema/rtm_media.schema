@@ -20,11 +20,11 @@ CREATE TABLE %s (
     ratings_average decimal(4,2) NULL DEFAULT 0 ,
     likes bigint(20) NULL DEFAULT 0 ,
     dislikes bigint(20) NULL DEFAULT 0 ,
-    PRIMARY KEY (id),
+    PRIMARY  KEY (id),
     KEY media_id (media_id),
     KEY media_author (media_author),
     KEY album_id (album_id),
     KEY media_author_id (album_id,media_author),
     KEY context_author_album_id (context_id,album_id,media_author),
-    KEY context(context)
+    KEY context_data (context)
 );

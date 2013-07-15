@@ -15,11 +15,21 @@ class RTMediaMigration {
         
         add_action('admin_menu', array($this, 'menu'));
         add_action('wp_ajax_bp_media_rt_db_migration', array($this, "migrate_to_new_db"));
+        add_action('wp_ajax_bp_media_rt_db_migration', array($this, "migrate_to_new_db"));
+        
+        if(isset($_REQUEST["page"]) && $_REQUEST["page"] == "rtmedia-migration" && isset($_REQUEST["hide"]) && $_REQUEST["hide"] =="true"){
+            $this->hide_migration_notice();
+            wp_safe_redirect($_SERVER["HTTP_REFERER"]);
+        }
+        if(get_site_option("rt_migration_hide_notice") !== false)
+            return true;
+        
         if (isset($_REQUEST["force"]) && $_REQUEST["force"] === "true")
             $pending = false;
         else
             $pending = get_site_option("rtMigration-pending-count");
-        
+        $total = $this->get_total_count();
+            $done = $this->get_done_count();
         if ($pending === false) {
             $total = $this->get_total_count();
             $done = $this->get_done_count();
@@ -32,11 +42,23 @@ class RTMediaMigration {
             if(!(isset($_REQUEST["page"]) && $_REQUEST["page"] == "rtmedia-migration"))
                 add_action('admin_notices', array(&$this, 'add_migration_notice'));
         }
+        
+    }
+    function hide_migration_notice(){
+        update_site_option("rt_migration_hide_notice", true);
+    }
+    function migrate_image_size_fix(){
+        if(get_site_option("rt_image_size_migration_fix","") == ""){
+            global $wpdb;
+            $sql = $wpdb->prepare("update $wpdb->postmeta set meta_value=replace(meta_value	,%s,%s) where meta_key = '_wp_attachment_metadata';","bp_media","rt_media");
+            $wpdb->get_row($sql);
+            update_option("rt_image_size_migration_fix", "fix");
+        }
     }
 
     function add_migration_notice() {
         if (current_user_can( 'manage_options' ) )
-            $this->create_notice("<p><strong>rtMedia</strong> : Please Migrate your Database <a href='" . admin_url("admin.php?page=rtmedia-migration&force=true") . "'>Click Here</a>.  </p>");
+            $this->create_notice("<p><strong>rtMedia</strong> : Please Migrate your Database <a href='" . admin_url("admin.php?page=rtmedia-migration&force=true") . "'>Click Here</a>.  <a href='" . admin_url("admin.php?page=rtmedia-migration&hide=true") . "' style='float:right'>" . __("Hide") . "</a> </p>");
     }
 
     function create_notice($message, $type = "error") {
@@ -188,10 +210,15 @@ class RTMediaMigration {
                 $album_count = 0;
             }
         }
-
-        $comment_sql = $wpdb->get_var("select count(*) from $wpdb->comments a  where a.comment_post_ID in (select b.media_id from $this->bmp_table b  left join
+        if (intval($_SESSION["migration_media"]) == intval($media_count)) {
+            $comment_sql = $_SESSION["migration_activity"];
+        } else {
+            $comment_sql = $wpdb->get_var("select count(*) 
+                                                from $wpdb->comments a  
+                                                 where a.comment_post_ID in (select b.media_id from $this->bmp_table b  left join
                                                                                             {$wpdb->posts} p ON (b.media_id = p.ID) where  (NOT p.ID IS NULL) ) and a.comment_agent=''");
-      // echo $media_count . "--" . $album_count . "--" . $comment_sql;
+        }
+        // echo $media_count . "--" . $album_count . "--" . $comment_sql;
         return $media_count + $album_count + $comment_sql;
     }
 
@@ -567,7 +594,7 @@ class RTMediaMigration {
             $prefix = "users/" . abs(intval($result->context_id));
         } else {
             $media_context = "group";
-            $prefix = "groups/" . abs(intval($result->context_id));
+            $prefix = bp_get_groups_root_slug() . abs(intval($result->context_id));
         }
 
 
