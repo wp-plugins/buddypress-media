@@ -49,7 +49,7 @@ class RTMediaActivity {
 
 			$html .= '<ul class="rtmedia-list large-block-grid-3">';
 			foreach ($media_details as $media) {
-				$html .= '<li class="rtmedia-list-item">';
+				$html .= '<li class="rtmedia-list-item media-type-' . $media->media_type . '">';
                                 if (  $media->media_type == 'photo' )
                                     $html .= '<a href ="'. get_rtmedia_permalink($media->id) .'">';
 					$html .= '<div class="rtmedia-item-thumbnail">';
@@ -102,9 +102,10 @@ class RTMediaActivity {
                                     $html = '<img src="'.$src.'" />';
                                 }
 			} elseif ( $media->media_type == 'video' )  {
-				$html = '<video src="' . wp_get_attachment_url($media->media_id) . '" width="320" height="240" type="video/mp4" class="wp-video-shortcode" id="bp_media_video_' . $media->id . '" controls="controls" preload="none"></video>';
+                            global $rtmedia;
+				$html = '<video src="' . wp_get_attachment_url($media->media_id) . '" width="' . $rtmedia->options["defaultSizes_video_activityPlayer_width"] . '" height="' . $rtmedia->options["defaultSizes_video_activityPlayer_height"] . '" type="video/mp4" class="wp-video-shortcode" id="rt_media_video_' . $media->id . '" controls="controls" preload="none"></video>';
 			} elseif ( $media->media_type == 'music' )  {
-                                $html = '<audio src="' . wp_get_attachment_url($media->media_id) . '" width="320" height="0" type="audio/mp3" class="wp-audio-shortcode" id="bp_media_audio_' . $media->id . '" controls="controls" preload="none"></audio>';
+                                $html = '<audio src="' . wp_get_attachment_url($media->media_id) . '" width="' . $rtmedia->options["defaultSizes_music_activityPlayer_width"] . '" height="0" type="audio/mp3" class="wp-audio-shortcode" id="rt_media_audio_' . $media->id . '" controls="controls" preload="none"></audio>';
 			} else  {
 				$html = false;
 			}
