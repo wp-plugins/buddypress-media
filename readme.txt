@@ -1,12 +1,12 @@
 === rtMedia for WordPress, BuddyPress and bbPress ===
-Contributors: rtcamp, rahul286, gagan0123, saurabhshukla, JoshuaAbenazer, faishal, desaiuditd, nitunlanjewar, umesh.nevase, suhasgirgaonkar, neerukoul, hrishiv90
+Contributors: rtcamp, rahul286, gagan0123, saurabhshukla, JoshuaAbenazer, faishal, desaiuditd, nitun.lanjewar, umesh.nevase, suhasgirgaonkar, neerukoul, hrishiv90
 Donate link: http://rtcamp.com/donate
 Tags: BuddyPress, media, multimedia, album, audio, songs, music, video, photo, image, upload, share, MediaElement.js, ffmpeg, kaltura, media-node, rtMedia, WordPress, bbPress
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Requires at least: WordPress 3.5
 Tested up to: WordPress 3.5.2 + BuddyPress 1.7
-Stable tag: 3.0.5
+Stable tag: 3.0.6
 
 rtMedia adds albums, audio/video encoding, privacy/sharing, front-end uploads & more. All this works nicely on mobile/tablets devices.
 
@@ -159,6 +159,15 @@ Please visit [rtMedia's Features page](http://rtcamp.com/buddypress-media/?utm_s
 == Changelog ==
 
 Please visit [rtMedia's Roadmap page](http://rtcamp.com/buddypress-media/roadmap/?utm_source=readme&utm_medium=plugin&utm_campaign=buddypress-media "Visit rtMedia's Features page") to get some details about future releases.
+
+= 3.0.6 =
+* Fixed image size issue
+* Fixed group create album permission and add setting for group admin
+* Fixed Activity Delete issue
+* Fixed Delete redirection
+* Fixed template url issue for backbone
+* Fixed photo tagging lightbox issue
+* Other minor bug fixes
 
 = 3.0.5 =
 * Fixed privacy issue in media
@@ -493,8 +502,8 @@ Please visit [rtMedia's Roadmap page](http://rtcamp.com/buddypress-media/roadmap
 
 == Upgrade Notice ==
 
-= 3.0.5 =
-Fixed template,privacy,activity media upload issue and other minor bug fixes.
+= 3.0.6 =
+Fixed image size creation isssue,create album permission,Activity Delete, Delete redirection,photo tagging lightbox issues.
 
 == Sponsors ==
 
