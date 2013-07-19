@@ -87,11 +87,6 @@ class RTMedia {
 	 * @global int $bp_media_counter Media counter
 	 */
 	public function __construct() {
-
-		// Rewrite API flush before activating and after deactivating the plugin
-		register_activation_hook( __FILE__, array( $this, 'flush_rewrite' ) );
-		register_deactivation_hook( __FILE__, array( $this, 'flush_rewrite' ) );
-
 		$this->default_thumbnail = apply_filters( 'rtmedia_default_thumbnail', RTMEDIA_URL . 'assets/thumb_default.png' );
 
 		// check for global album --- after wordpress is fully loaded
@@ -143,6 +138,11 @@ class RTMedia {
             return $image_sizes;
         }
         public function add_image_sizes() {
+            $bp_media_sizes = $this->image_sizes();
+            add_image_size("rt_media_thumbnail", $bp_media_sizes['thumbnail']["width"],$bp_media_sizes['thumbnail']["height"],$bp_media_sizes['thumbnail']["crop"]);
+            add_image_size("rt_media_activity_image", $bp_media_sizes['activity']["width"],$bp_media_sizes['activity']["height"],$bp_media_sizes['activity']["crop"]);
+            add_image_size("rt_media_single_image", $bp_media_sizes['single']["width"],$bp_media_sizes['single']["height"],$bp_media_sizes['single']["crop"]);
+            add_image_size("rt_media_featured_image", $bp_media_sizes['featured']["width"],$bp_media_sizes['featured']["height"],$bp_media_sizes['featured']["crop"]);
             add_action('wp_footer', array(&$this,'custome_style_for_activity_image_size'));
         }
         function custome_style_for_activity_image_size() {?>
@@ -610,10 +610,6 @@ class RTMedia {
 		load_plugin_textdomain( 'rtmedia', false, basename( RTMEDIA_PATH ) . '/languages/' );
 	}
 
-	function flush_rewrite() {
-		error_log( 'flush' );
-		flush_rewrite_rules();
-	}
 
 	function check_global_album() {
 		$album = new RTMediaAlbum();
