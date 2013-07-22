@@ -86,10 +86,16 @@ class RTMediaTemplate {
             return $this->get_default_template();
         } else if ($shortcode_attr['name'] == 'gallery') {
             $valid = $this->sanitize_gallery_attributes($shortcode_attr['attr']);
-
             if ($valid) {
-                if (is_array($shortcode_attr['attr']))
+                if (is_array($shortcode_attr['attr'])){
                     $this->update_global_query($shortcode_attr['attr']);
+                }
+                global $rtaccount;
+                if(!isset($rtaccount)){
+                    $rtaccount = 0;
+                }
+                //add_action("rtmedia_before_media_gallery",array(&$this,"")) ;        
+                $this->add_hidden_fields_in_gallery();
                 include $this->locate_template($template);
             } else {
                 echo __('Invalid attribute passed for rtmedia_gallery shortcode.', 'rtmedia');
@@ -97,7 +103,17 @@ class RTMediaTemplate {
             }
         }
     }
-
+    function add_hidden_fields_in_gallery(){
+        global $rtmedia_query;
+        $return_str= "";
+        if($rtmedia_query->original_query && is_array($rtmedia_query->original_query)){
+            foreach($rtmedia_query->original_query as $key=>$val){ 
+                $return_str.= '<input name="' . $key . '" value="' . $val . '" type="hidden" />';
+                
+            }
+        }
+        echo  $return_str;
+    }
     function check_return_json() {
         global $rtmedia_query;
         if ($rtmedia_query->format == 'json') {
@@ -121,7 +137,7 @@ class RTMediaTemplate {
         if ($rtmedia_query->media) {
             foreach ($rtmedia_query->media as $key => $media) {
                 $media_array[$key] = $media;
-                list($src, $width, $height) = wp_get_attachment_image_src($media->media_id, 'thumbnail');
+                list($src, $width, $height) = wp_get_attachment_image_src($media->media_id, 'rt_media_thumbnail');
                 if (!$src) {
                     global $rtmedia;
                     $src = $rtmedia->allowed_types[$media->media_type]["thumbnail"];
@@ -162,7 +178,7 @@ class RTMediaTemplate {
             $state = $media->update($rtmedia_query->action_query->id, $data, $rtmedia_query->media[0]->media_id);
             $rtmedia_query->query(false);
             do_action('rtmedia_after_update_media',$rtmedia_query->action_query->id, $state);
-            if($state){
+            if($state!==false){
                 add_action("rtmedia_before_template_load", array(&$this,"media_update_success_messege"));
             }else{
                 add_action("rtmedia_before_template_load", array(&$this, "media_update_success_error"));
@@ -431,7 +447,6 @@ class RTMediaTemplate {
     function update_global_query($attr) {
 
         global $rtmedia_query;
-
         $rtmedia_query->query($attr);
     }
 

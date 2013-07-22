@@ -35,6 +35,7 @@ class RTMediaQuery {
 	 * @var object The currently relevant interaction object
 	 */
 	private $interaction;
+        public $original_query;
 
 	/**
 	 *
@@ -371,6 +372,7 @@ class RTMediaQuery {
 	 * @return type
 	 */
 	function &query( $query ) {
+                $this->original_query =  $query;
 		$this->query = wp_parse_args($query , $this->query );
 
                 if(isset($this->query) && isset($this->query["global"]) && $this->query["global"]=="true"){
@@ -382,7 +384,6 @@ class RTMediaQuery {
                             unset($this->query["album_id"]);
                         unset($this->query["global"]);
                 }
-
 		$this->set_media_type();
 		$this->media_query = $this->query;
 		return $this->get_data();
@@ -567,7 +568,7 @@ class RTMediaQuery {
 	function populate_data() {
 		unset( $this->media_query->meta_query );
 		unset( $this->media_query->tax_query );
-
+                $this->current_media = -1;
 		if ( $this->action_query->action == 'comments' && ! isset( $this->action_query->id ) )
 			$this->media = $this->populate_comments();
 		else
