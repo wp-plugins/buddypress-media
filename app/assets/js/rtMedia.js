@@ -1,4 +1,19 @@
 var rtMagnificPopup;
+var rtMediaHook = {
+    hooks: [],
+    register: function(name, callback) {
+        if ('undefined' == typeof(rtMediaHook.hooks[name]))
+            rtMediaHook.hooks[name] = []
+        rtMediaHook.hooks[name].push(callback)
+    },
+    call: function(name, arguments) {
+        if ('undefined' != typeof(rtMediaHook.hooks[name]))
+            for (i = 0; i < rtMediaHook.hooks[name].length; ++i)
+                if (true != rtMediaHook.hooks[name][i](arguments)) {
+                    break;
+                }
+    }
+}
 jQuery('document').ready(function($) {
 
     $("#rt_media_comment_form").submit(function(e) {
@@ -20,7 +35,7 @@ jQuery('document').ready(function($) {
         rtMagnificPopup = jQuery('.rtmedia-list-media, .rtmedia-activity-container ul.rtmedia-list, #bp-media-list,.widget-item-listing,.bp-media-sc-list, li.media.album_updated ul,ul.bp-media-list-media, li.activity-item div.activity-content div.activity-inner div.bp_media_content').magnificPopup({
             delegate: 'a:not(".no-popup")',
             type: 'ajax',
-            tLoading: 'Loading image #%curr%...',
+            tLoading: 'Loading media #%curr%...',
             mainClass: 'mfp-img-mobile',
             preload: [1, 3],
             closeOnBgClick: false,
@@ -60,10 +75,11 @@ jQuery('document').ready(function($) {
                         settings.pluginPath = _wpmejsSettings.pluginPath;
 
                     $('.mfp-content .wp-audio-shortcode,.mfp-content .wp-video-shortcode,.mfp-content .bp_media_content video').mediaelementplayer(settings);
-                    $('.mfp-content .mejs-audio .mejs-controls').css('position','relative');
+                    $('.mfp-content .mejs-audio .mejs-controls').css('position', 'relative');
+                    rtMediaHook.call('rtmedia_js_popup_after_content_added', []);
                 },
                 close: function(e) {
-                    console.log(e);                    
+                    console.log(e);
                 },
                 BeforeChange: function(e) {
                     console.log(e);
