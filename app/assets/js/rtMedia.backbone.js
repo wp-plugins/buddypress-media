@@ -303,6 +303,8 @@ jQuery(function($) {
         });
         uploaderObj.uploader.bind('BeforeUpload', function(up, file) {
             up.settings.multipart_params.privacy = $("#rtm-file_upload-ui select#privacy").val();
+            if (jQuery("#rt_upload_hf_redirect").length > 0)
+                up.settings.multipart_params.redirect = up.files.length;
             jQuery("#rtmedia-uploader-form input[type=hidden]").each(function() {
                 up.settings.multipart_params[$(this).attr("name")] = $(this).val();
             });
@@ -314,9 +316,20 @@ jQuery(function($) {
         });
 
         uploaderObj.uploader.bind('FileUploaded', function(up, file, res) {
+            if (res.status == 200 || res.status == 302) {
+                if (uploaderObj.upload_count == undefined)
+                    uploaderObj.upload_count = 1;
+                else
+                    uploaderObj.upload_count++;
+
+                if (uploaderObj.upload_count == up.files.length && jQuery("#rt_upload_hf_redirect").length > 0 && res.response.indexOf("http") == 0) {
+                    window.location = res.response;
+                }
+            }
 
             files = up.files;
             lastfile = files[files.length - 1];
+
             try {
                 var rtnObj;
                 rtnObj = JSON.parse(res.response);
@@ -325,6 +338,7 @@ jQuery(function($) {
             } catch (e) {
                 // console.log('Invalid Activity ID');
             }
+
         });
 
         $("#rtMedia-start-upload").click(function(e) {
@@ -364,11 +378,13 @@ jQuery(document).ready(function($) {
             $("#rtmedia-action-update").append($("#privacy"));
         }
     }
+    var objUploadView = new UploadView(rtMedia_update_plupload_config);
     $("#whats-new-form").on('click', '#rtmedia-add-media-button-post-update', function(e) {
         $("#div-attache-rtmedia").toggle();
+        objUploadView.uploader.refresh();
     })
     //whats-new-post-in
-    var objUploadView = new UploadView(rtMedia_update_plupload_config);
+    
 
     objUploadView.uploader.bind('FilesAdded', function(up, files) {
         //$("#aw-whats-new-submit").attr('disabled', 'disabled');
