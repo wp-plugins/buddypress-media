@@ -60,10 +60,10 @@ jQuery(document).ready(function($) {
 
     jQuery('#bp-media-settings-boxes').on('submit', '#bp_media_settings_form,#rtmedia-settings-submit', function(e) {
         var return_code = true;
-        var reg = new RegExp('^auto$|^[+-]?[0-9]+\\.?([0-9]+)?(px|em|ex|%|in|cm|mm|pt|pc)?$')
+        var reg = new RegExp('^auto$|^[+-]?[0-9]+\\.?([0-9]+)?(px|em|ex|%|in|cm|mm|pt|pc)?$');
         jQuery("input[name*='defaultSizes']").each(function(el) {
             if (!reg.test(jQuery(this).val())) {
-                alert("Invalid value for " + jQuery(this).attr('name').replace('rtmedia-options[', '').replace(']', '').replace(/_/g, ' '))
+                alert("Invalid value for " + jQuery(this).attr('name').replace('rtmedia-options[', '').replace(']', '').replace(/_/g, ' '));
                 return_code = false;
                 return false;
             }
@@ -93,7 +93,7 @@ jQuery(document).ready(function($) {
                 } else {
                     jQuery('.encoding-try-now').next().remove();
                     jQuery('#settings-error-encoding-error').remove();
-                    jQuery('h2:first').after('<div class="error" id="settings-error-encoding-error"><p>' + response.error + '</p></div>');
+                    jQuery('#bp-media-settings-boxes').before('<div class="error" id="settings-error-encoding-error"><p>' + response.error + '</p></div>');
                 }
             });
         }
@@ -490,7 +490,7 @@ jQuery(document).ready(function($) {
     });
 
 
-    jQuery("#rtm-settings-tabs,#rtm-addons").sliderTabs({
+    jQuery("#rtm-addons").sliderTabs({
         autoplay: false,
         mousewheel: false,
         defaultTab: manageHash()
@@ -545,4 +545,6 @@ jQuery(document).ready(function($) {
         e.preventDefault();
         manageHash();
     });
+    if(jQuery(document).foundation !== undefined)
+        jQuery(document).foundation('section');
 });

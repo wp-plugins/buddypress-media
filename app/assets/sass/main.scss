@@ -188,6 +188,12 @@
 					    overflow: hidden;
 					}					
 				}
+				.rtmedia-media-title {
+					margin: 0 0 5px 0;
+					display: block;
+					font-weight: bold;
+					letter-spacing: 1px;
+				}
 			}
 			.rtmedia-single-meta{
 				div{
@@ -273,6 +279,11 @@
 		border-top-right-radius: 3px;
 		border-top-left-radius: 3px;
 		border-color: #CCC #CCC #DFDFDF;
+	}
+	.rtmedia-change-cover-arts {
+		p {
+			padding: 5px 0;
+		}
 	}
 }
 .rtmedia-activity-container {
@@ -389,3 +400,11 @@
     @include border-radius(4px);
     background-color: #E74C3C;
 }
+.rtmp-uploaded-file {
+    width: 100%;
+} 
+.close {
+    cursor: pointer;
+    color : red;
+}
+
