@@ -3,7 +3,7 @@ var nextpage = 2;
 var upload_sync = false;
 var activity_id = -1;
 var uploaderObj;
-    
+
 jQuery(function($) {
 
 
@@ -210,7 +210,7 @@ jQuery(function($) {
 
         },
         initUploader: function(a) {
-            
+
             if(typeof(a)!=="undefined") a=false;// if rtmediapro widget calls the function, dont show max size note.
             this.uploader.init();
             //The plupload HTML5 code gives a negative z-index making add files button unclickable
@@ -321,6 +321,15 @@ jQuery(function($) {
         });
 
         uploaderObj.uploader.bind('FileUploaded', function(up, file, res) {
+            
+            if (/MSIE (\d+\.\d+);/.test(navigator.userAgent)) { //test for MSIE x.x;
+                var ieversion=new Number(RegExp.$1) // capture x.x portion and store as a number
+
+                   if(ieversion <10) {
+                           if( typeof res.response !== "undefined" )
+                               res.status = 200;
+                   }
+            }
             if (res.status == 200 || res.status == 302) {
                 if (uploaderObj.upload_count == undefined)
                     uploaderObj.upload_count = 1;
@@ -344,7 +353,7 @@ jQuery(function($) {
                 // console.log('Invalid Activity ID');
             }
         });
-        
+
         uploaderObj.uploader.refresh();//refresh the uploader for opera/IE fix on media page
 
         $("#rtMedia-start-upload").click(function(e) {
@@ -411,17 +420,16 @@ jQuery(document).ready(function($) {
     objUploadView.uploader.bind('FileUploaded', function(up, file, res) {
         if (/MSIE (\d+\.\d+);/.test(navigator.userAgent)) { //test for MSIE x.x;
          var ieversion=new Number(RegExp.$1) // capture x.x portion and store as a number
- 
+
             if(ieversion <10) {
                 try {
                     if( typeof JSON.parse(res.response) !== "undefined" )
                         res.status = 200;
-                    console.log(res.status);
                 }
                 catch(e){}
             }
         }
-        
+
         if (res.status == 200) {
             try {
                 var objIds = JSON.parse(res.response);
@@ -470,7 +478,11 @@ jQuery(document).ready(function($) {
     var media_uploading = false;
     $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
         // Modify options, control originalOptions, store jqXHR, etc
-        if (typeof(originalOptions.data) == "undefined" || typeof(originalOptions.data.action) == "undefined") {
+        try{
+            if (originalOptions.data == null || typeof(originalOptions.data) == "undefined" || typeof(originalOptions.data.action) == "undefined" ) {
+                return true;
+            }
+        }catch(e){
             return true;
         }
         if (originalOptions.data.action == 'post_update') {

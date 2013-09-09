@@ -600,7 +600,8 @@ class RTMedia {
             'like' => false,
             'cover_art' => false,
             'featured' => false,
-            'Group' => false
+            'Group' => false,
+	    'ViewCount' => false
                 //'query'		=> false
         );
         global $rtmedia_nav;
@@ -841,27 +842,53 @@ class RTMedia {
 
 }
 
+function parentlink_global_album($id) {
+    $global_albums = RTMediaAlbum::get_globals ();
+    $parent_link = "";
+    if(is_array($global_albums) && $global_albums != "") {
+	if(in_array($id, $global_albums) && function_exists("bp_displayed_user_id")) {
+	    $disp_user = bp_displayed_user_id();
+	    $curr_user = get_current_user_id();
+	    if($disp_user == $curr_user) {
+		$parent_link = get_rtmedia_user_link($curr_user);
+	    }
+	    else {
+		$parent_link = get_rtmedia_user_link($disp_user);
+	    }
+	}
+    }
+    return $parent_link;
+}
+
 function get_rtmedia_permalink($id) {
     $mediaModel = new RTMediaModel();
     $media = $mediaModel->get(array('id' => intval($id)));
-
-
     global $rtmedia_query;
 
-    if ($media[0]->context == 'group')
-        $parent_link = get_rtmedia_group_link($media[0]->context_id);
-    else {
-        if (isset($rtmedia_query->query) && isset($rtmedia_query->query["context"]) && $rtmedia_query->query["context"] == "group") {
-            $parent_link = get_rtmedia_group_link($rtmedia_query->query["context_id"]);
-        }
-        else {
-            //if ( ! isset ( $media[ 0 ]->context ) ) {
-            //   $media[ 0 ]->media_author = $rtmedia_query->query[ "context_id" ];
-            // }
 
-            $parent_link = get_rtmedia_user_link($media[0]->media_author);
-        }
-    }
+	if (!isset($media[0]->context)) {
+	    if ( function_exists("bp_get_groups_root_slug") && isset($rtmedia_query->query) && isset($rtmedia_query->query["context"]) && $rtmedia_query->query["context"] == "group") {
+		$parent_link = get_rtmedia_group_link($rtmedia_query->query["context_id"]);
+	    }
+	    else {
+		// check for global album
+		$parent_link = parentlink_global_album($id);
+		if($parent_link == "") {
+		    $parent_link = get_rtmedia_user_link($media[0]->media_author);
+		}
+
+	    }
+	} else {
+	    if (function_exists("bp_get_groups_root_slug") && $media[0]->context == 'group'){
+		$parent_link = get_rtmedia_group_link($media[0]->context_id);
+	    }else {
+		// check for global album
+		$parent_link = parentlink_global_album($id);
+		if($parent_link == "") {
+		    $parent_link = get_rtmedia_user_link($media[0]->media_author);
+		}
+	    }
+	}
 
     $parent_link = trailingslashit($parent_link);
     return trailingslashit($parent_link . RTMEDIA_MEDIA_SLUG . '/' . $id);
@@ -882,8 +909,8 @@ function rtmedia_update_site_option($option_name, $option_value) {
 }
 
 function get_rtmedia_group_link($group_id) {
-    $group = groups_get_group(array('group_id' => $group_id));
-    return home_url(bp_get_groups_root_slug() . '/' . $group->slug);
+        $group = groups_get_group(array('group_id' => $group_id));
+        return home_url(trailingslashit(bp_get_groups_root_slug())  . $group->slug);
 }
 
 function rtmedia_get_site_option($option_name, $default = false) {
