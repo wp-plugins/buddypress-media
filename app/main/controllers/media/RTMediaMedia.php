@@ -391,7 +391,7 @@ class RTMediaMedia {
      * @return type
      */
     function image_sizes ( $sizes ) {
-        return array( 'rt_media_thumbnail', 'rt_media_activity_image', 'rt_media_single_image' );
+        return array( 'rt_media_thumbnail', 'rt_media_activity_image', 'rt_media_single_image','rt_media_featured_image' );
     }
 
     /**
@@ -497,7 +497,7 @@ class RTMediaMedia {
 
 
         $this->model->update (
-                array( 'activity_id' => $activity_id ), array( 'id' => $id )
+                array( 'activity_id' => $activity_id ), array( 'id' => $media->id )
         );
 
         return $activity_id;

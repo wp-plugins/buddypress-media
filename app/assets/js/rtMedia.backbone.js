@@ -57,7 +57,7 @@ jQuery(function($) {
         url: function() {
             var temp = window.location.pathname;
             var url = '';
-            if (temp.indexOf(rtmedia_media_slug) == -1) {
+            if (temp.indexOf("/" + rtmedia_media_slug + "/") == -1) {
                 url = rtmedia_media_slug + '/';
             } else {
                 if (temp.indexOf('pg/') == -1)
@@ -314,14 +314,14 @@ jQuery(function($) {
                 up.settings.multipart_params[$(this).attr("name")] = $(this).val();
             });
             up.settings.multipart_params.activity_id = activity_id;
-            if ($('.rtmedia-user-album-list').length > 0)
-                up.settings.multipart_params.album_id = $('.rtmedia-user-album-list').find(":selected").val();
-            else if ($('.rtmedia-current-album').length > 0)
-                up.settings.multipart_params.album_id = $('.rtmedia-current-album').val();
+	     if ($('#rtmedia-uploader-form .rtmedia-user-album-list').length > 0)
+                up.settings.multipart_params.album_id = $('#rtmedia-uploader-form .rtmedia-user-album-list').find(":selected").val();
+            else if ($('#rtmedia-uploader-form .rtmedia-current-album').length > 0)
+                up.settings.multipart_params.album_id = $('#rtmedia-uploader-form .rtmedia-current-album').val();
         });
 
         uploaderObj.uploader.bind('FileUploaded', function(up, file, res) {
-            
+
             if (/MSIE (\d+\.\d+);/.test(navigator.userAgent)) { //test for MSIE x.x;
                 var ieversion=new Number(RegExp.$1) // capture x.x portion and store as a number
 
@@ -330,28 +330,30 @@ jQuery(function($) {
                                res.status = 200;
                    }
             }
-            if (res.status == 200 || res.status == 302) {
-                if (uploaderObj.upload_count == undefined)
-                    uploaderObj.upload_count = 1;
-                else
-                    uploaderObj.upload_count++;
+            var rtnObj;
+             try {
 
-                if (uploaderObj.upload_count == up.files.length && jQuery("#rt_upload_hf_redirect").length > 0 && jQuery.trim(res.response.indexOf("http") == 0)) {
-                    window.location = res.response;
-                }
-            }
-
-            files = up.files;
-            lastfile = files[files.length - 1];
-
-            try {
-                var rtnObj;
                 rtnObj = JSON.parse(res.response);
                 uploaderObj.uploader.settings.multipart_params.activity_id = rtnObj.activity_id;
                 activity_id = rtnObj.activity_id;
             } catch (e) {
                 // console.log('Invalid Activity ID');
             }
+            if (res.status == 200 || res.status == 302) {
+                if (uploaderObj.upload_count == undefined)
+                    uploaderObj.upload_count = 1;
+                else
+                    uploaderObj.upload_count++;
+
+                if (uploaderObj.upload_count == up.files.length && jQuery("#rt_upload_hf_redirect").length > 0 && jQuery.trim(rtnObj.redirect_url.indexOf("http") == 0)) {
+                    window.location = rtnObj.redirect_url;
+                }
+            }
+
+            files = up.files;
+            lastfile = files[files.length - 1];
+
+
         });
 
         uploaderObj.uploader.refresh();//refresh the uploader for opera/IE fix on media page
