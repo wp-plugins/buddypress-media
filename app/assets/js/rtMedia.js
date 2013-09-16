@@ -1,6 +1,7 @@
 var rtMagnificPopup;
 var rtMediaHook = {
     hooks: [],
+    is_break : false,
     register: function(name, callback) {
         if ('undefined' == typeof(rtMediaHook.hooks[name]))
             rtMediaHook.hooks[name] = []
@@ -8,10 +9,14 @@ var rtMediaHook = {
     },
     call: function(name, arguments) {
         if ('undefined' != typeof(rtMediaHook.hooks[name]))
-            for (i = 0; i < rtMediaHook.hooks[name].length; ++i)
+            for (i = 0; i < rtMediaHook.hooks[name].length; ++i){
                 if (true != rtMediaHook.hooks[name][i](arguments)) {
+                    rtMediaHook.is_break=true;
+                    return false;
                     break;
                 }
+            }
+            return true;
     }
 }
 jQuery('document').ready(function($) {
@@ -79,10 +84,10 @@ jQuery('document').ready(function($) {
                     rtMediaHook.call('rtmedia_js_popup_after_content_added', []);
                 },
                 close: function(e) {
-                    console.log(e);
+                    //console.log(e);
                 },
                 BeforeChange: function(e) {
-                    console.log(e);
+                    //console.log(e);
                 }
             }
         });
@@ -132,6 +137,7 @@ jQuery('document').ready(function($) {
             var old_val = $("#rtmedia_create_new_album").html();
             $("#rtmedia_create_new_album").prepend("<img src='" + rMedia_loading_file + "'/>");
             jQuery.post(rtmedia_ajax_url, data, function(response) {
+		response = response.trim();
                 if (response) {
 		    response = response.trim();
 		    var flag = true;
