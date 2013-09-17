@@ -1,4 +1,4 @@
-    <?php
+<?php
 
 /**
  * Checks at any point of time any media is left to be processed in the db pool
@@ -1218,4 +1218,3 @@ function get_rtmedia_allowed_upload_type () {
     }
     return $allow_type_str;
 }
-
