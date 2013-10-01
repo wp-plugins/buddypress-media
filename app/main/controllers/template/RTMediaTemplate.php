@@ -80,7 +80,7 @@ class RTMediaTemplate {
             $this->check_return_merge ();
 
             $this->check_return_comments ();
-
+            
             return $this->get_default_template ();
         } else if ( ! $shortcode_attr ) {
             return $this->get_default_template ();
@@ -175,6 +175,15 @@ class RTMediaTemplate {
             $state = $media->update ( $rtmedia_query->action_query->id, $data, $rtmedia_query->media[ 0 ]->media_id );
             $rtmedia_query->query ( false );
             do_action ( 'rtmedia_after_update_media', $rtmedia_query->action_query->id, $state );
+
+            //refresh
+            $rtMediaNav = new RTMediaNav();
+            if (  $rtmedia_query->media[ 0 ]->context == "group" ) {
+                $rtMediaNav->refresh_counts ( $rtmedia_query->media[ 0 ]->context_id, array( "context" =>  $rtmedia_query->media[ 0 ]->context, 'context_id' => $rtmedia_query->media[ 0 ]->context_id ) );
+            } else {
+                    $rtMediaNav->refresh_counts ( $rtmedia_query->media[ 0 ]->media_author, array( "context" => "profile", 'media_author' => $rtmedia_query->media[ 0 ]->media_author ) );
+            }
+
             if ( $state !== false ) {
                 add_action ( "rtmedia_before_template_load", array( &$this, "media_update_success_messege" ) );
             } else {
@@ -491,11 +500,11 @@ class RTMediaTemplate {
                     $template = 'media-single-edit';
             }else {
                 return;
-            }
+            } 
+            $template = apply_filters('rtmedia_template_filter',$template);
         }
-        
-        $context = apply_filters( 'rtmedia_context_filter' , $context ); // filter added for rtmedia_pro playist
-        $template = apply_filters( 'rtmedia_template_filter', $template ); // filter added for rtmedia_pro playist
+
+        $context = apply_filters( 'rtmedia_context_filter' , $context );
         
         $template_name = $template . '.php';
         
@@ -529,7 +538,7 @@ class RTMediaTemplate {
             }
         }
         
-        $located = apply_filters('rtmedia_located_template', $located );
+        $located = apply_filters('rtmedia_located_template', $located , $url, $ogpath, $template_name );// filter for rtmedia pro
         return $located;
     }
 

@@ -431,3 +431,15 @@ button.mfp-close {
 .mejs-video .mejs-controls {
     position: absolute;
 }
+
+/* audio player positioning fix */
+.mejs-container .mejs-controls {
+ //   position: static;
+}
+.mfp-content #rtmedia-single-media-container .wp-audio-shortcode{
+    height: 0px!important;
+}
+
+.rtmedia-single-container .rtmedia-editor-description {
+    margin-top: 15px;
+}

@@ -1,43 +1,7 @@
 var rtMagnificPopup;
-var rtMediaHook = {
-    hooks: [],
-    is_break : false,
-    register: function(name, callback) {
-        if ('undefined' == typeof(rtMediaHook.hooks[name]))
-            rtMediaHook.hooks[name] = []
-        rtMediaHook.hooks[name].push(callback)
-    },
-    call: function(name, arguments) {
-        if ('undefined' != typeof(rtMediaHook.hooks[name]))
-            for (i = 0; i < rtMediaHook.hooks[name].length; ++i){
-                if (true != rtMediaHook.hooks[name][i](arguments)) {
-                    rtMediaHook.is_break=true;
-                    return false;
-                    break;
-                }
-            }
-            return true;
-    }
-}
-jQuery('document').ready(function($) {
-
-    $("#rt_media_comment_form").submit(function(e) {
-        if ($.trim($("#comment_content").val()) == "") {
-            alert("Empty Comment is not allowed");
-            return false;
-        } else {
-            return true;
-        }
-
-    })
-
-    //Remove title from popup duplication
-    $("li.rtmedia-list-item p a").each(function(e) {
-        $(this).addClass("no-popup");
-    })
-    //rtmedia_lightbox_enabled from setting
-    if (typeof(rtmedia_lightbox_enabled) != 'undefined' && rtmedia_lightbox_enabled == "1") {
-        rtMagnificPopup = jQuery('.rtmedia-list-media, .rtmedia-activity-container ul.rtmedia-list, #bp-media-list,.widget-item-listing,.bp-media-sc-list, li.media.album_updated ul,ul.bp-media-list-media, li.activity-item div.activity-content div.activity-inner div.bp_media_content').magnificPopup({
+function apply_rtMagnificPopup(selector){
+    jQuery('document').ready(function($) {
+        rtMagnificPopup = jQuery(selector).magnificPopup({
             delegate: 'a:not(".no-popup")',
             type: 'ajax',
             tLoading: 'Loading media #%curr%...',
@@ -91,6 +55,47 @@ jQuery('document').ready(function($) {
                 }
             }
         });
+    });
+}
+var rtMediaHook = {
+    hooks: [],
+    is_break : false,
+    register: function(name, callback) {
+        if ('undefined' == typeof(rtMediaHook.hooks[name]))
+            rtMediaHook.hooks[name] = []
+        rtMediaHook.hooks[name].push(callback)
+    },
+    call: function(name, arguments) {
+        if ('undefined' != typeof(rtMediaHook.hooks[name]))
+            for (i = 0; i < rtMediaHook.hooks[name].length; ++i){
+                if (true != rtMediaHook.hooks[name][i](arguments)) {
+                    rtMediaHook.is_break=true;
+                    return false;
+                    break;
+                }
+            }
+            return true;
+    }
+}
+jQuery('document').ready(function($) {
+
+    $("#rt_media_comment_form").submit(function(e) {
+        if ($.trim($("#comment_content").val()) == "") {
+            alert("Empty Comment is not allowed");
+            return false;
+        } else {
+            return true;
+        }
+
+    })
+
+    //Remove title from popup duplication
+    $("li.rtmedia-list-item p a").each(function(e) {
+        $(this).addClass("no-popup");
+    })
+    //rtmedia_lightbox_enabled from setting
+    if (typeof(rtmedia_lightbox_enabled) != 'undefined' && rtmedia_lightbox_enabled == "1") {
+        apply_rtMagnificPopup('.rtmedia-list-media, .rtmedia-activity-container ul.rtmedia-list, #bp-media-list,.widget-item-listing,.bp-media-sc-list, li.media.album_updated ul,ul.bp-media-list-media, li.activity-item div.activity-content div.activity-inner div.bp_media_content');
     }
 
     jQuery('.rtmedia-container').on('click', '.select-all', function(e) {
@@ -124,6 +129,7 @@ jQuery('document').ready(function($) {
         $albumname = jQuery.trim(jQuery('#rtmedia_album_name').val());
         $context = jQuery.trim(jQuery('#rtmedia_album_context').val());
         $context_id = jQuery.trim(jQuery('#rtmedia_album_context_id').val());
+	$privacy = jQuery.trim(jQuery('#rtmedia_select_album_privacy').val());
         if ($albumname != '') {
             var data = {
                 action: 'rtmedia_create_album',
@@ -131,7 +137,9 @@ jQuery('document').ready(function($) {
                 context: $context,
                 context_id: $context_id
             };
-
+	   if($privacy !== "") {
+	       data['privacy'] = $privacy;
+	   }
             // since 2.8 ajaxurl is always defined in the admin header and points to admin-ajax.php
             $("#rtmedia_create_new_album").attr('disabled', 'disabled');
             var old_val = $("#rtmedia_create_new_album").html();
