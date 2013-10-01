@@ -22,9 +22,9 @@ class RTMediaFeatured extends RTMediaUserInteraction {
     function __construct ( $user_id = false, $flag = false ) {
         $args = array(
             'action' => 'featured',
-            'label' => 'Set Featured',
+            'label' => __('Set Featured'),
             'plural' => '',
-            'undo_label' => 'Unset Featured',
+            'undo_label' => __('Unset Featured'),
             'privacy' => 60,
             'countable' => false,
             'single' => true,
@@ -41,7 +41,7 @@ class RTMediaFeatured extends RTMediaUserInteraction {
 
     function before_render () {
         $this->get ();
-        if ( ! $this->settings[ $this->media->media_type ] )
+        if ( !(isset($this->settings[ $this->media->media_type ]) && $this->settings[ $this->media->media_type ]))
             return false;
         if ( isset ( $this->action_query ) && isset ( $this->action_query->id ) && $this->action_query->id == $this->featured ) {
             $this->label = $this->undo_label;
@@ -95,7 +95,7 @@ class RTMediaFeatured extends RTMediaUserInteraction {
         $metadata = wp_get_attachment_metadata ( $media_id );
         $resized = image_make_intermediate_size ( get_attached_file ( $media_id ), $this->settings[ 'width' ], $this->settings[ 'height' ], $this->settings[ 'crop' ] );
         if ( $resized ) {
-            $metadata[ 'sizes' ][ 'rtmedia-featured' ] = $resized;
+            $metadata[ 'sizes' ][ 'rt_media_featured_image' ] = $resized;
             wp_update_attachment_metadata ( $media_id, $metadata );
         }
     }

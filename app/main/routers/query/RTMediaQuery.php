@@ -156,14 +156,14 @@ class RTMediaQuery {
         }
         return false;
     }
-    
+
     function is_playlist_gallery () {
         if ( isset ( $this->action_query->media_type ) && $this->action_query->media_type == 'playlist' ) {
             return true;
         }
         return false;
     }
-    
+
     function is_playlist () {
         if ( isset ( $this->query[ 'media_type' ] ) && $this->query[ 'media_type' ] == 'playlist' ) {
             return true;
@@ -224,7 +224,9 @@ class RTMediaQuery {
                 include get_404_template ();
                 die ();
             }
-
+            
+            do_action('rtmedia_slug_404_handler'); // disbale  media type 404 handler
+            
             // requesting nonce /media/nonce/edit/ | /media/nonce/comment
             // | /media/nonce/delete
 
@@ -447,13 +449,13 @@ class RTMediaQuery {
     function register_set_gallery_template_filter($template,$attr){
         remove_filter("rtmedia-before-template", array(&$this,"register_set_gallery_template_filter"),10,2);
         return "album-gallery";
-        
+
     }
     function privacy_filter ( $where, $table_name ) {
         if( is_rt_admin() )
             return $where;
         $user = $this->get_user ();
-        
+
         $where .= " AND ({$table_name}.privacy is NULL OR {$table_name}.privacy=0";
         if ( $user ) {
             $where .= " OR ({$table_name}.privacy=20)";
@@ -566,7 +568,7 @@ class RTMediaQuery {
         foreach ( $rtmedia->allowed_types as $value ) {
             $allowed_media_types[ ] = $value[ 'name' ];
         }
-        
+
         if ( ! isset ( $this->media_query[ 'media_type' ] ) ) {
             if ( isset ( $this->action_query->media_type ) &&
                     (
@@ -576,7 +578,8 @@ class RTMediaQuery {
             ) {
                $this->media_query[ 'media_type' ] = $this->action_query->media_type;
             } else {
-                $this->media_query[ 'media_type' ] = array( 'compare' => 'NOT IN', 'value' => array( 'album' ) );
+                $this->media_query[ 'media_type' ] = array( 'compare' => 'IN', 'value' => array( 'music', 'video', 'photo') );
+                $this->media_query[ 'media_type' ] = apply_filters( 'rtmedia_query_media_type_filter', $this->media_query[ 'media_type' ] ); // can add more types here
             }
         }
     }

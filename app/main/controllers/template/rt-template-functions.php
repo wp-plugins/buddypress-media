@@ -49,6 +49,27 @@ function rtmedia_title () {
     }
 }
 
+function get_rtmedia_gallery_title () {
+    global $rtmedia_query;
+    $title = '';
+    if( isset( $rtmedia_query->media_query['media_type'] ) && !is_array( $rtmedia_query->media_query['media_type']) && $rtmedia_query->media_query['media_type'] != "") {
+        $title = __('All '. $rtmedia_query->media_query['media_type'] . "s" , 'rtmedia');
+        return $title;
+    }
+    if( isset( $rtmedia_query->query['media_type'] ) &&  $rtmedia_query->query['media_type'] == "album"
+        && isset( $rtmedia_query->media_query['album_id'] )  &&  $rtmedia_query->media_query['album_id'] != ""  ) {
+        $id = $rtmedia_query->media_query['album_id'];
+        return get_rtmedia_title($id);
+    }
+    return false;
+}
+
+function get_rtmedia_title($id) {
+    $rtmedia_model = new RTMediaModel();
+    $title = $rtmedia_model->get( array('id' => $id ) );
+    return $title[0]->media_title;
+}
+
 function rtmedia_author_profile_pic ( $show_link = true ) {
     global $rtmedia_backbone;
     if ( $rtmedia_backbone[ 'backbone' ] ) {
@@ -192,7 +213,7 @@ function rtmedia_media ( $size_flag = true, $echo = true, $media_size = "rt_medi
 
             $html = '<video src="' . wp_get_attachment_url ( $rtmedia_media->media_id ) . '" ' . $size . ' type="video/mp4" class="wp-video-shortcode" id="bp_media_video_' . $rtmedia_media->id . '" controls="controls" preload="true"></video>';
         } elseif ( $rtmedia_media->media_type == 'music' ) {
-            $size = ' width="600" height="0" ';
+            $size = ' width="600" height="30" ';
             if ( ! $size_flag )
                 $size = '';
             $html = '<audio src="' . wp_get_attachment_url ( $rtmedia_media->media_id ) . '" ' . $size . ' type="audio/mp3" class="wp-audio-shortcode" id="bp_media_audio_' . $rtmedia_media->id . '" controls="controls" preload="none"></audio>';
@@ -282,7 +303,7 @@ function rtmedia_album_image ( $size = 'thumbnail', $id = false) {
     $model = new RTMediaModel();
     if($id == false){
         $id = $rtmedia_media->id;
-        
+
     }
     global $rtmedia_query;
     $media = $model->get_media ( array( 'album_id' => $id, 'media_type' => 'photo', 'media_author' => $rtmedia_query->query['context_id'] ), 0, 1 );
@@ -363,7 +384,7 @@ function rtmedia_description_input () {
     $html = '';
 
     if ( rtmedia_request_action () == 'edit' )
-        $html .= wp_editor ( $value, $name, array( 'media_buttons' => false ) );
+        $html .= wp_editor ( $value, $name, array( 'media_buttons' => false , 'textarea_rows' => 4, 'quicktags' => false) );
     else
         $html .= '<div name="' . $name . '" id="' . $name . '">' . $value . '</div>';
 
@@ -378,7 +399,8 @@ function rtmedia_description_input () {
  */
 function rtmedia_description () {
     global $rtmedia_media;
-    echo $rtmedia_media->post_content;
+    echo get_post_field("post_content", $rtmedia_media->media_id);
+    //echo $rtmedia_media->post_content;
 }
 
 /**
@@ -487,9 +509,9 @@ function rtmedia_comments () {
 function rmedia_single_comment ( $comment ) {
     $html = "";
     $html .= '<li class="rtmedia-comment">';
-    $html .= '<div class ="rtmedia-comment-author">' . (($comment[ 'comment_author' ]) ? $comment[ 'comment_author' ] : 'Annonymous') . '  said : </div>';
+    $html .= '<div class ="rtmedia-comment-author">' . (($comment[ 'comment_author' ]) ? $comment[ 'comment_author' ] : 'Annonymous') . ' ' . __ ( 'said', 'rtmedia' ) . ' : </div>';
     $html .= '<div class="rtmedia-comment-content">' . $comment[ 'comment_content' ] . '</div>';
-    $html .= '<div class ="rtmedia-comment-date"> on ' . $comment[ 'comment_date_gmt' ] . '</div>';
+    $html .= '<div class ="rtmedia-comment-date"> ' . __ ( 'on', 'rtmedia' ) . ' ' . $comment[ 'comment_date_gmt' ] . '</div>';
 //			$html .= '<a href></a>';
     $html .= '</li>';
     return $html;
@@ -513,7 +535,8 @@ function rtmedia_pagination_prev_link () {
         if ( function_exists ( "bp_get_current_group_slug" ) )
             $link .= $site_url . bp_get_groups_root_slug () . '/' . bp_get_current_group_slug () . '/';
     } else {
-        $post = get_post ( $rtmedia_media->post_parent );
+        //$post = get_post ( $rtmedia_media->post_parent );
+        $post = get_post ( get_post_field("post_parent", $rtmedia_media->media_id));
 
         $link .= $site_url . $post->post_name . '/';
     }
@@ -545,8 +568,9 @@ function rtmedia_pagination_next_link () {
         if ( function_exists ( "bp_get_current_group_slug" ) )
             $link .= $site_url . bp_get_groups_root_slug () . '/' . bp_get_current_group_slug () . '/';
     } else {
-        $post = get_post ( $rtmedia_media->post_parent );
-
+        //$post = get_post ( $rtmedia_media->post_parent );
+	$post = get_post ( get_post_field("post_parent", $rtmedia_media->media_id));
+	
         $link .= $site_url . $post->post_name . '/';
     }
     $link .= RTMEDIA_MEDIA_SLUG . '/';
@@ -831,7 +855,7 @@ function rtmedia_delete_form () {
     $html .= '<input type="hidden" name="request_action" id="request_action" value="delete">';
     echo $html;
     RTMediaMedia::media_nonce_generator ( rtmedia_id (), true );
-    echo '<input type="submit" value="' . __ ( 'Delete', 'rtmedia' ) . '"></form>';
+    echo '<button type="submit">' . __ ( 'Delete', 'rtmedia' ) . '</button></form>';
 }
 
 /**
@@ -982,7 +1006,7 @@ function rtmedia_create_album () {
     if( !$return ) {
 	return;
     }
-    
+
     global $rtmedia_query;
     $user_id = get_current_user_id ();
     $display = false;
@@ -1009,6 +1033,7 @@ function rtmedia_create_album () {
             <input type="text" id="rtmedia_album_name" value="" />
             <input type="hidden" id="rtmedia_album_context" value="<?php echo $rtmedia_query->query[ 'context' ]; ?>">
             <input type="hidden" id="rtmedia_album_context_id" value="<?php echo $rtmedia_query->query[ 'context_id' ]; ?>">
+	    <?php do_action("rtmedia_add_album_privacy"); ?>
             <button type="button" id="rtmedia_create_new_album"><?php _e ( "Create Album", "rtmedia" ); ?>
             </button>
         </div><?php
@@ -1170,7 +1195,7 @@ function can_user_create_album_in_group ( $group_id = false, $user_id = false ) 
                 $display_flag = true;
             }
         } else if ( $upload_level == "moderators" ) {
-            if ( groups_is_user_mod ( $user_id, $group_id ) ) {
+            if ( groups_is_user_mod ( $user_id, $group_id ) || groups_is_user_admin ( $user_id, $group_id ) ) {
                 $display_flag = true;
             }
         } else {
@@ -1209,7 +1234,7 @@ function get_rtmedia_allowed_upload_type () {
     $allow_type_str = "";
     $sep = "";
     foreach ( $rtmedia->allowed_types as $type ) {
-        
+
         if (function_exists("is_rtmedia_upload_" . $type[ "name" ] . "_enabled") && call_user_func ( "is_rtmedia_upload_" . $type[ "name" ] . "_enabled" ) ) {
             foreach ( $type[ "extn" ] as $extn ) {
                 $allow_type_str .= $sep . $extn;
@@ -1223,4 +1248,15 @@ function get_rtmedia_allowed_upload_type () {
 
 function is_rt_admin(){
     return current_user_can("list_users");
+}
+
+function get_rtmedia_like($media_id = false) {
+    $mediamodel = new RTMediaModel();
+    $actions = $mediamodel->get( array( 'id' => rtmedia_id($media_id) ) );
+    if(isset($actions[ 0 ]->likes)){
+	$actions = intval($actions[ 0 ]->likes);
+    }else{
+	$actions = 0;
+    }
+    return $actions;
 }
