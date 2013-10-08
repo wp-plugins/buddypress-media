@@ -47,6 +47,12 @@ class RTMediaUploadShortcode {
      */
     static function pre_render ( $attr ) {
         global $post;
+        global $rtmedia_query;
+        if( !isset($attr['is_up_shortcode']) || $attr['is_up_shortcode'] !== false) {
+            $rtmedia_query->is_upload_shortcode = true;// set is_upload_shortcode in rtmedia query as true
+        } else {
+            $rtmedia_query->is_upload_shortcode = false;// set is_upload_shortcode in rtmedia query as true
+        }
         if ( isset ( $attr ) && !empty($attr)) {
             if ( ! is_array ( $attr ) ) {
                 $attr = Array( );
@@ -65,7 +71,7 @@ class RTMediaUploadShortcode {
                 return;
             }
             ob_start ();
-
+            
             self::$add_sc_script = true;
             RTMediaUploadTemplate::render ( $attr );
 

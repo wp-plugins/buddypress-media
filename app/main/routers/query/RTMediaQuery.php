@@ -41,10 +41,11 @@ class RTMediaQuery {
      *
      * @var array The actions recognised for the object
      */
-    public $actions = array(
+     public $actions = array(
         'edit' => array( 'Edit', false ),
         'delete' => array( 'Delete', false ),
-        'comment' => array( 'Comment', true )
+        'comment' => array( 'Comment', true ),
+        'delete-comment' => array( 'Comment Deleted', false )
     );
     public $media = '';
     public $media_count = 0;
@@ -224,9 +225,9 @@ class RTMediaQuery {
                 include get_404_template ();
                 die ();
             }
-            
+
             do_action('rtmedia_slug_404_handler'); // disbale  media type 404 handler
-            
+
             // requesting nonce /media/nonce/edit/ | /media/nonce/comment
             // | /media/nonce/delete
 
@@ -534,7 +535,7 @@ class RTMediaQuery {
             else
                 $pre_media = $this->model->{$query_function} ( $context_id, ($this->action_query->page - 1) * $this->action_query->per_page_media, $this->action_query->per_page_media, $order_by );
 
-            $media_for_total_count = $this->model->{$query_function} ( $context_id, false, false );
+            $media_for_total_count = count ( $this->model->{$query_function} ( $context_id, false, false ) );
         } else {
             /**
              * fetch media entries from rtMedia context
@@ -547,10 +548,10 @@ class RTMediaQuery {
             /**
              * count total medias in album irrespective of pagination
              */
-            $media_for_total_count = $this->model->get_media ( $this->media_query, false, false );
+            $media_for_total_count = $this->model->get_media ( $this->media_query, false, false, false , true );
         }
 
-        $this->media_count = count ( $media_for_total_count );
+        $this->media_count = intval( $media_for_total_count );
 
         if ( ! $pre_media )
             return false;
