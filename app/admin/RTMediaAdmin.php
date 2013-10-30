@@ -19,6 +19,7 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
         public function __construct () {
             global $rtmedia;
             add_action ( 'init', array( $this, 'video_transcoding_survey_response' ) );
+            add_action ( 'admin_init', array( $this, 'presstrends_plugin' ) );
             if ( is_multisite () ) {
                 add_action ( 'network_admin_notices', array( $this, 'upload_filetypes_error' ) );
                 add_action ( 'admin_notices', array( $this, 'upload_filetypes_error' ) );
@@ -273,11 +274,11 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
                 'rtmedia_page_rtmedia-addons',
                 'rtmedia_page_rtmedia-support',
                 'rtmedia_page_rtmedia-importer',
-                'rtmedia_page_rtmedia-regenerate'
+                'rtmedia_page_rtmedia-regenerate',
+                'rtmedia_page_rtmedia-premium'
             );
             $admin_pages = apply_filters ( 'rtmedia_filter_admin_pages_array', $admin_pages );
-
-            if ( in_array ( $hook, $admin_pages ) ) {
+	    if ( in_array ( $hook, $admin_pages ) || strpos( $hook, 'rtmedia-migration') ) {
                 $admin_ajax = admin_url ( 'admin-ajax.php' );
 
                 wp_enqueue_script ( 'bootstrap-switch', RTMEDIA_URL . 'app/assets/js/bootstrap-switch.js', array( 'jquery' ), RTMEDIA_VERSION );
@@ -336,6 +337,10 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
             add_submenu_page ( 'rtmedia-settings', __ ( 'Settings', 'rtmedia' ), __ ( 'Settings', 'rtmedia' ), 'manage_options', 'rtmedia-settings', array( $this, 'settings_page' ) );
             add_submenu_page ( 'rtmedia-settings', __ ( 'Addons', 'rtmedia' ), __ ( 'Addons', 'rtmedia' ), 'manage_options', 'rtmedia-addons', array( $this, 'addons_page' ) );
             add_submenu_page ( 'rtmedia-settings', __ ( 'Support', 'rtmedia' ), __ ( 'Support ', 'rtmedia' ), 'manage_options', 'rtmedia-support', array( $this, 'support_page' ) );
+	    if(! defined("RTMEDIA_PRO_VERSION")) {
+		add_submenu_page ( 'rtmedia-settings', __ ( 'Premium', 'rtmedia' ), __ ( 'Premium ', 'rtmedia' ), 'manage_options', 'rtmedia-premium', array( $this, 'premium_page' ) );
+	    }
+
             $obj_encoding =  new RTMediaEncoding(true);
             if ($obj_encoding->api_key)
                 add_submenu_page ( 'rtmedia-settings', __ ( 'Regenerate Thumbnail', 'rtmedia' ), __ ( 'Regen. Thumbnail ', 'rtmedia' ), 'manage_options', 'rtmedia-regenerate', array( $this, 'rt_regenerate_thumbnail' ) );
@@ -546,7 +551,11 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
             $this->render_page ( 'rtmedia-support' );
         }
 
-        /**
+	public function premium_page() {
+	    $this->render_page ( 'rtmedia-premium' );
+	}
+
+	/**
          *
          * @return type
          */
@@ -606,7 +615,11 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
                                 <?php
                                 if ( $page == 'rtmedia-addons' )
                                     RTMediaAddon::render_addons ( $page );
-                                else
+                                else if ( $page == 'rtmedia-support' ) {
+				    $rtmedia_support = new RTMediaSupport(false);
+				    $rtmedia_support->render_support($page);
+				}
+				else
                                     do_settings_sections ( $page );
                                 ?>
                                 <?php
@@ -692,6 +705,9 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
             foreach ( array_values ( $tabs ) as $tab_data ) {
                 $is_current = ( bool ) ( $tab_data[ 'slug' ] == $this->get_current_tab () );
                 $tab_class = $is_current ? $active_class : $idle_class;
+		if(isset($tab_data['class']) && is_array($tab_data['class'])) {
+		    $tab_class .= " ".implode(" ", $tab_data['class']);
+		}
                 $tabs_html .= '<a href="' . $tab_data[ 'href' ] . '" class="' . $tab_class . '">' . $tab_data[ 'name' ] . '</a>';
             }
 
@@ -1133,6 +1149,57 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
 	    </script>
 	<?php
 	}
+        
+        function presstrends_plugin() {
+            // PressTrends Account API Key
+            $api_key = 'o3w063qppl7ha022jyc3bjpi7usrmczho';
+            $auth    = '';
+            // Start of Metrics
+            global $wpdb;
+            $data = get_transient( 'presstrends_cache_data' );
+            if ( !$data || $data == '' ) {
+                $api_base = 'http://api.presstrends.io/index.php/api/pluginsites/update?auth=';
+                $url      = $api_base . $auth . '&api=' . $api_key . '';
+                $count_posts    = wp_count_posts();
+                $count_pages    = wp_count_posts( 'page' );
+                $comments_count = wp_count_comments();
+                if ( function_exists( 'wp_get_theme' ) ) {
+                    $theme_data = wp_get_theme();
+                    $theme_name = urlencode( $theme_data->Name );
+                } else {
+                    $theme_data = get_theme_data( get_stylesheet_directory() . '/style.css' );
+                    $theme_name = $theme_data['Name'];
+                }
+                $plugin_name = '&';
+                foreach ( get_plugins() as $plugin_info ) {
+                    $plugin_name .= $plugin_info['Name'] . '&';
+                }
+                // CHANGE __FILE__ PATH IF LOCATED OUTSIDE MAIN PLUGIN FILE
+                $plugin_data         = get_plugin_data( __FILE__ );
+                $posts_with_comments = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->posts WHERE post_type='post' AND comment_count > 0" );
+                $data                = array(
+                    'url'             => base64_encode(site_url()),
+                    'posts'           => $count_posts->publish,
+                    'pages'           => $count_pages->publish,
+                    'comments'        => $comments_count->total_comments,
+                    'approved'        => $comments_count->approved,
+                    'spam'            => $comments_count->spam,
+                    'pingbacks'       => $wpdb->get_var( "SELECT COUNT(comment_ID) FROM $wpdb->comments WHERE comment_type = 'pingback'" ),
+                    'post_conversion' => ( $count_posts->publish > 0 && $posts_with_comments > 0 ) ? number_format( ( $posts_with_comments / $count_posts->publish ) * 100, 0, '.', '' ) : 0,
+                    'theme_version'   => $plugin_data['Version'],
+                    'theme_name'      => $theme_name,
+                    'site_name'       => str_replace( ' ', '', get_bloginfo( 'name' ) ),
+                    'plugins'         => count( get_option( 'active_plugins' ) ),
+                    'plugin'          => urlencode( $plugin_name ),
+                    'wpversion'       => get_bloginfo( 'version' ),
+                );
+                foreach ( $data as $k => $v ) {
+                    $url .= '&' . $k . '=' . $v . '';
+                }
+                wp_remote_get( $url );
+                set_transient( 'presstrends_cache_data', $data, 60 * 60 * 24 );
+            }
+        }
     }
 
 }
