@@ -541,7 +541,7 @@ function rtmedia_comments () {
     if( $comment_list != "") {
         $html .= $comment_list;
     } else {
-        $html .= "<li id='rtmedia-no-comments'>". __('There are no comments on this media yet.') . "</li>";
+        $html .= "<li id='rtmedia-no-comments'>". __(apply_filters('rtmedia_single_media_no_comment_messege','There are no comments on this media yet.')) . "</li>";
     }
 
     $html .= '</ul>';
@@ -877,7 +877,7 @@ function update_video_poster($html,$media,$activity=false){
 
 function get_video_without_thumbs() {
     $rtmedia_model = new RTMediaModel();
-    $sql = "select media_id from {$rtmedia_model->table_name} where media_type = 'video' and cover_art is null";
+    $sql = "select media_id from {$rtmedia_model->table_name} where media_type = 'video' and blog_id = '".get_current_blog_id()."' and cover_art is null";
     global $wpdb;
     $results = $wpdb-> get_col ( $sql );
     return $results;
@@ -924,6 +924,7 @@ function rtmedia_delete_form () {
     $html .= '<input type="hidden" name="request_action" id="request_action" value="delete">';
     echo $html;
     RTMediaMedia::media_nonce_generator ( rtmedia_id (), true );
+    do_action("rtmedia_media_single_delete_form");
     echo '<button type="submit" class="rtmedia-delete-media">' . __ ( 'Delete', 'rtmedia' ) . '</button></form>';
 }
 
@@ -1003,7 +1004,7 @@ function rtmedia_user_album_list ( $get_all = false ) {
     $global_option = rtmedia_global_album_list ();
     $global_albums = rtmedia_global_albums ();
 
-    $global_album = get_site_option ( 'rtmedia-global-albums' );
+    $global_album = rtmedia_get_site_option ( 'rtmedia-global-albums' );
     $album_objects = $model->get_media ( array( 'media_author' => get_current_user_id (), 'media_type' => 'album' ), false, 'context' );
     $option_group = "";
     $profile_option = "";
@@ -1144,7 +1145,7 @@ function rtmedia_album_edit () {
     ?>
         <div class="reveal-modal-bg" style="display: none"></div>
         <?php
-    if ( isset ( $rtmedia_query->media_query ) && ! in_array ( $rtmedia_query->media_query[ 'album_id' ], get_site_option ( 'rtmedia-global-albums' ) ) ) {
+    if ( isset ( $rtmedia_query->media_query ) && ! in_array ( $rtmedia_query->media_query[ 'album_id' ], rtmedia_get_site_option ( 'rtmedia-global-albums' ) ) ) {
         //if ( isset ( $rtmedia_query->media_query[ 'media_author' ] ) && get_current_user_id () == $rtmedia_query->media_query[ 'media_author' ] ) {
 	if ( rtmedia_is_album_editable() || is_rt_admin() ) {
             ?>
@@ -1432,7 +1433,14 @@ function rtmedia_admin_premium_page($page) {
     ?>
 	<div class="premium-page-container">
 	    <div class="row">
-	    <h1 class="premium-title">17 Reasons to buy rtMedia-PRO</h1>
+	    <h1 class="premium-title">Reasons to buy rtMedia-PRO</h1>
+	    </div>
+	    <div class="row">
+		<div class="columns large-1 rtm-premium-icon-pro"><i class="icon-comments icon-3x"></i></div>
+		<div class="columns large-10">
+		    <h2>WordPress Comment Attachment</h2>
+		    <p>You can attach files to WordPress comments.</p>
+		</div>
 	    </div>
 	    <div class="row">
 		<div class="columns large-1 rtm-premium-icon-pro"><i class="icon-user icon-3x"></i></div>
@@ -1442,7 +1450,7 @@ function rtmedia_admin_premium_page($page) {
 		</div>
 	    </div>
 	    <div class="row">
-		<div class="columns large-1 rtm-premium-icon-pro"><i class="icon-file icon-3x"></i></div>
+		<div class="columns large-1 rtm-premium-icon-pro"><i class="icon-file-alt icon-3x"></i></div>
 		<div class="columns large-10">
 		    <h2>Document Support</h2>
 		    <p>You can add, view and download documents like txt, doc, pdf, also add and upload other file types like zip, tar and tar.gz etc.</p>
