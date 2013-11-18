@@ -637,6 +637,7 @@ jQuery(document).ready(function($) {
                 $("#rtmedia_comment_ul").append(data);
                 $("#comment_content").val("");
                 $("#rt_media_comment_form #rt_media_comment_submit").removeAttr('disabled');
+                rtMediaHook.call('rtmedia_js_after_comment_added', []);
             }
         });
 
@@ -648,7 +649,9 @@ jQuery(document).ready(function($) {
     //Delete comment
     jQuery(document).on('click', '.rtmedia-delte-comment', function(e){
        e.preventDefault();
-       if(!confirm('Are you sure you want to delete this comment ?'))
+       var ask_confirmation = true
+       ask_confirmation = rtMediaHook.call('rtmedia_js_delete_comment_confirmation', [ask_confirmation]);
+       if(ask_confirmation && !confirm('Are you sure you want to delete this comment ?'))
            return false;
        var current_comment = jQuery(this);
        var current_comment_parent = current_comment.parent();
@@ -666,9 +669,10 @@ jQuery(document).ready(function($) {
            success: function(res) {
             if(res !='undefined' && res == 1){
                 current_comment.closest('li').hide(1000, function(){ current_comment.closest('li').remove(); });
-            }else
+            }else{
                 current_comment.css('opacity', '1');
-
+            }
+            rtMediaHook.call('rtmedia_js_after_comment_deleted', []);
            }
        });
 
