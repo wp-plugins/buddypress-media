@@ -91,6 +91,7 @@ class RTMedia
         add_action('wp_enqueue_scripts', array('RTMediaGalleryShortcode', 'register_scripts'));
         add_action('wp_enqueue_scripts', array(&$this, 'enqueue_scripts_styles'), 999);
         add_action('rt_db_upgrade', array($this, 'fix_parent_id'));
+        add_action('rt_db_upgrade', array($this, 'fix_privacy'));
         include(RTMEDIA_PATH . 'app/main/controllers/template/rt-template-functions.php');
         add_filter('intermediate_image_sizes_advanced', array($this, 'filter_image_sizes_details'));
         add_filter('intermediate_image_sizes', array($this, 'filter_image_sizes'));
@@ -139,6 +140,11 @@ class RTMedia
 		}
             }
         }
+    }
+
+    function fix_privacy() {
+	$model = new RTMediaModel();
+	$update_sql = "UPDATE $model->table_name SET privacy = '80' where privacy = '-1' ";
     }
 
     function set_site_options() {
@@ -843,6 +849,10 @@ function parentlink_global_album($id) {
             } else {
                 $parent_link = get_rtmedia_user_link($disp_user);
             }
+	    global $rtmedia_query;
+	    if( isset( $rtmedia_query->is_gallery_shortcode ) && $rtmedia_query->is_gallery_shortcode == true) {
+		$parent_link = get_rtmedia_user_link( get_current_user_id() );
+	    }
         }
     }
     return $parent_link;
