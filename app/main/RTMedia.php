@@ -717,7 +717,7 @@ class RTMedia
     function create_table_error_notice() {
         global $rtmedia_error;
         $rtmedia_error = true;
-        echo "<div class='error'><p><strong>rtMedia</strong>" . __(": Can't Create Database table. Please check create table permission.") . "</p></div>";
+        echo "<div class='error'><p><strong>rtMedia</strong>" . __(": Can't Create Database table. Please check create table permission.", "rtmedia") . "</p></div>";
     }
 
     function enqueue_scripts_styles() {
@@ -901,9 +901,9 @@ function get_rtmedia_user_link($id) {
 
 function rtmedia_update_site_option($option_name, $option_value) {
     if( is_multisite() ) {
-	update_option($option_name, $option_value);
+	return update_option($option_name, $option_value);
     } else {
-	update_site_option($option_name, $option_value);
+	return update_site_option($option_name, $option_value);
     }
 }
 
