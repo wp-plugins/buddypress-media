@@ -83,6 +83,11 @@ class RTMedia
      * @global int $bp_media_counter Media counter
      */
     public function __construct() {
+        /**
+         *
+         * Buddypress Media Auto Upgradation
+         */
+        $this->update_db();
         $this->default_thumbnail = apply_filters('rtmedia_default_thumbnail', RTMEDIA_URL . 'assets/thumb_default.png');
         add_action('init', array($this, 'check_global_album'));
         add_action('plugins_loaded', array($this, 'init'), 20);
@@ -559,11 +564,6 @@ class RTMedia
          */
         $this->set_site_options();
 
-        /**
-         *
-         * Buddypress Media Auto Upgradation
-         */
-        $this->update_db();
 
         /**
          * Add a settings link to the Plugin list screen
@@ -710,6 +710,10 @@ class RTMedia
         if (!defined('RTMEDIA_VERSION'))
             define('RTMEDIA_VERSION', $update->db_version);
         if ($update->check_upgrade()) {
+            $update->do_upgrade();
+        }
+        if(! $update->  table_exists ( $update->  genrate_table_name ( "rtm_media" ) )){
+            delete_site_option($update->get_db_version_option_name());
             $update->do_upgrade();
         }
     }
