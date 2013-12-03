@@ -274,7 +274,13 @@ class RTMedia
                 unset($allowed_types[$key]); // if not unset this type
                 continue;
             }
-
+	    $slug = strtoupper($type['name']);
+	    if( defined("RTMEDIA_".$slug."_LABEL" ) ) {
+		$type['label'] = constant( "RTMEDIA_".$slug."_LABEL" );
+	    }
+	    if( defined( "RTMEDIA_".$slug."_PLURAL_LABEL" ) ) {
+		$type['plural_label'] = constant( "RTMEDIA_".$slug."_PLURAL_LABEL" );
+	    }
             // if thumbnail is not supplied, use the default thumbnail
             if (!isset($type['thumbnail']) || empty($type['thumbnail'])) {
                 $type['thumbnail'] = $this->default_thumbnail;
@@ -393,7 +399,8 @@ class RTMedia
             'general_perPageMedia' => (isset($bp_media_options['default_count'])) ? $bp_media_options['default_count'] : 10,
             'general_enableMediaEndPoint' => 0,
             'general_showAdminMenu' => (isset($bp_media_options['show_admin_menu'])) ? $bp_media_options['show_admin_menu'] : 0,
-            'general_videothumbs' => 2
+            'general_videothumbs' => 2,
+	    'general_AllowUserData' => 1
         );
 
 
@@ -737,8 +744,9 @@ class RTMedia
 
         wp_enqueue_style('rtmedia-main', RTMEDIA_URL . 'app/assets/css/main.css', '', RTMEDIA_VERSION);
         wp_enqueue_style('rtmedia-font-awesome', RTMEDIA_URL . 'app/assets/css/font-awesome.min.css', '', RTMEDIA_VERSION);
-        wp_enqueue_script('rtmedia-foundation', RTMEDIA_URL . 'lib/foundation/foundation.min.js', array('jquery'), RTMEDIA_VERSION);
-        wp_enqueue_script('rtmedia-foundation-reveal', RTMEDIA_URL . 'lib/foundation/foundation.reveal.js', array('jquery'), RTMEDIA_VERSION);
+        if(! wp_script_is("rtp-foundation-js"))
+            wp_enqueue_script('rtp-foundation-js', RTMEDIA_URL . 'lib/foundation/foundation.min.js', array('jquery'), RTMEDIA_VERSION);
+        wp_enqueue_script('rtmedia-foundation-reveal', RTMEDIA_URL . 'lib/foundation/foundation.reveal.js', array('jquery','rtp-foundation-js'), RTMEDIA_VERSION);
         wp_enqueue_script('rtmedia-main', RTMEDIA_URL . 'app/assets/js/rtMedia.js', array('jquery', 'wp-mediaelement'), RTMEDIA_VERSION);
         wp_enqueue_style('rtmedia-magnific', RTMEDIA_URL . 'lib/magnific/magnific.css', '', RTMEDIA_VERSION);
         wp_enqueue_script('rtmedia-magnific', RTMEDIA_URL . 'lib/magnific/magnific.js', '', RTMEDIA_VERSION);
