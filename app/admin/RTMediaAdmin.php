@@ -79,31 +79,52 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
 	    if( $this->check_for_addon_update_notice() ) {
 		add_action ( 'admin_notices', array( $this, 'rtmedia_addon_update_notice' ) );
 	    }
-        }
+	    if( !class_exists("BuddyPress") ) {
+		add_action( 'admin_init',array( $this,'check_permalink_admin_notice' ) );
+	    }
+            
+            add_action ( 'wp_ajax_rtmedia_hide_template_override_notice', array( $this, 'rtmedia_hide_template_override_notice' ), 1 );
+            add_action ( 'admin_notices', array( $this, 'rtmedia_update_template_notice' ) );
+	}
+
+	function check_permalink_admin_notice() {
+	    global $wp_rewrite;
+	    if ( empty( $wp_rewrite->permalink_structure ) ) {
+		add_action( 'admin_notices', array( $this, 'rtmedia_permalink_notice' ) );
+	    }
+	}
+
+	function rtmedia_permalink_notice() {
+	    echo '<div class="error rtmedia-permalink-change-notice">
+		    <p> <b>'.__('rtMedia:').'</b> '.__(' You must ').'<a href="'.admin_url( 'options-permalink.php' ).'">'.__('update permalink structure').'</a>'.__(' to something other than the default for it to work.','rtmedia').' </p>
+		    </div>';
+	}
 
 	function rtmedia_addon_update_notice() {
-	    $site_option  = rtmedia_get_site_option("rtmedia-addon-update-notice");
-	    if(!$site_option || $site_option != "hide") {
-		rtmedia_update_site_option("rtmedia-addon-update-notice", "show");
-		echo '<div class="error rtmedia-addon-upate-notice">
-                <p> <b>'.__('rtMedia:').'</b> '.__('Please update all premium add-ons that you had purchased from rtCamp from your ','rtmedia').' <a href="https://rtcamp.com/my-account/" target="_blank">'.__('account',"rtmedia").'</a>. <a href="#" onclick="rtmedia_hide_addon_update_notice()" style="float:right">Hide</a> </p>
-                </div>';
-	    }
+	    if(is_rt_admin() ) {
+		$site_option  = rtmedia_get_site_option("rtmedia-addon-update-notice");
+		if(!$site_option || $site_option != "hide") {
+		    rtmedia_update_site_option("rtmedia-addon-update-notice", "show");
+		    echo '<div class="error rtmedia-addon-upate-notice">
+		    <p> <b>'.__('rtMedia:').'</b> '.__('Please update all premium add-ons that you had purchased from rtCamp from your ','rtmedia').' <a href="https://rtcamp.com/my-account/" target="_blank">'.__('account',"rtmedia").'</a>. <a href="#" onclick="rtmedia_hide_addon_update_notice()" style="float:right">Hide</a> </p>
+		    </div>';
+		}
 
-	    ?>
-		<script type="text/javascript">
-		    function rtmedia_hide_addon_update_notice() {
-			var data = {
-			    action: 'rtmedia_hide_addon_update_notice'
-			};
-			jQuery.post(ajaxurl, data, function(response) {
-			    response = response.trim();
-			    if(response === "1")
-				jQuery('.rtmedia-addon-upate-notice').remove();
-			});
-		    }
-		</script>
-	    <?php
+		?>
+		    <script type="text/javascript">
+			function rtmedia_hide_addon_update_notice() {
+			    var data = {
+				action: 'rtmedia_hide_addon_update_notice'
+			    };
+			    jQuery.post(ajaxurl, data, function(response) {
+				response = response.trim();
+				if(response === "1")
+				    jQuery('.rtmedia-addon-upate-notice').remove();
+			    });
+			}
+		    </script>
+		<?php
+	    }
 	}
 
 	function check_for_addon_update_notice() {
@@ -867,7 +888,14 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
                     'callback' => array( 'RTMediaFormHandler', 'buddypress_content' ) //change it to BuddyPress Content
                 );
             }
-
+            $tabs[ ] = array(
+                'href' => '#rtmedia-custom-css',
+                'icon' => 'icon-css3',
+                'title' => __( 'rtMedia Custom CSS', 'rtmedia' ),
+                'name' => __( 'Custom CSS', 'rtmedia' ),
+                'callback' => array( 'RTMediaFormHandler', 'custom_css_content' )
+            );
+            
             $tabs = apply_filters ( 'rtmedia_add_settings_sub_tabs', $tabs, $tab );
             $tabs_html .= '<ul>';
             foreach ( $tabs as $tab ) {
@@ -1283,6 +1311,39 @@ if ( ! class_exists ( 'RTMediaAdmin' ) ) {
                 set_transient( 'presstrends_cache_data', $data, 60 * 60 * 24 );
             }
         }
+        
+        function rtmedia_update_template_notice(){
+	    $site_option  = rtmedia_get_site_option("rtmedia-update-template-notice");
+            if(!$site_option || $site_option != "hide") {
+		rtmedia_update_site_option("rtmedia-update-template-notice", "show");
+		echo '<div class="error rtmedia-update-template-notice"><p>' 
+                . __('Template files of rtMedia Plugin are updated, so please update your rtMedia template files if you have overridden the default rtMedia templates in your theme.')
+                . '<a href="#" onclick="rtmedia_hide_template_override_notice()" style="float:right">' .__('Hide', 'rtmedia') .'</a>'
+                . ' </p></div>';
+	    ?>
+		<script type="text/javascript">
+		    function rtmedia_hide_template_override_notice() {
+			var data = {action : 'rtmedia_hide_template_override_notice'};
+			jQuery.post(ajaxurl,data,function(response){
+			    response = response.trim();
+			    if(response === "1")
+				jQuery('.rtmedia-update-template-notice').remove();
+			});
+		    }
+		</script>
+	    <?php
+	    }
+	}
+        
+         function rtmedia_hide_template_override_notice() {
+
+	    if(rtmedia_update_site_option("rtmedia-update-template-notice", "hide"))
+		echo "1";
+	    else
+		echo "0";
+	    die();
+	}
+        
     }
 
 }

@@ -416,7 +416,7 @@ class RTMedia
             'general_enableMediaEndPoint' => 0,
             'general_showAdminMenu' => (isset($bp_media_options['show_admin_menu'])) ? $bp_media_options['show_admin_menu'] : 0,
             'general_videothumbs' => 2,
-	    'general_AllowUserData' => 1
+	    'general_AllowUserData' => 1            
         );
 
 
@@ -459,7 +459,10 @@ class RTMedia
         $defaults['privacy_enabled'] = (isset($bp_media_options['privacy_enabled'])) ? $bp_media_options['privacy_enabled'] : 0;
         $defaults['privacy_default'] = (isset($bp_media_options['default_privacy_level'])) ? $bp_media_options['default_privacy_level'] : 0;
         $defaults['privacy_userOverride'] = (isset($bp_media_options['privacy_override_enabled'])) ? $bp_media_options['privacy_override_enabled'] : 0;
-
+        
+        $defaults['styles_custom'] = (isset($bp_media_options['styles_custom'])) ? $bp_media_options['styles_custom'] : '';
+        $defaults['styles_enabled'] = (isset($bp_media_options['styles_enabled'])) ? $bp_media_options['styles_enabled'] : 1;
+        
         $this->options = $defaults;
 
         $this->init_buddypress_options();
@@ -612,7 +615,7 @@ class RTMedia
             'nav' => true,
             'like' => false,
             'featured' => false,
-            'Group' => false,
+//            'Group' => false, will be constructed after rtmedia pro classes are constructed.
             'ViewCount' => false
                 //'query'		=> false
         );
@@ -633,7 +636,9 @@ class RTMedia
         }
         /** ------------------- * */
         $class_construct = apply_filters('rtmedia_class_construct', $class_construct);
-
+       
+        $class_construct['Group'] = false; // will be constructed after rtmedia pro class.
+        
         foreach ($class_construct as $key => $global_scope) {
             $classname = '';
             $ck = explode('_', $key);
@@ -737,6 +742,7 @@ class RTMedia
         }
         if(! $update->  table_exists ( $update->  genrate_table_name ( "rtm_media" ) )){
             delete_site_option($update->get_db_version_option_name());
+	    $update->install_db_version = "0";
             $update->do_upgrade();
         }
     }
@@ -757,12 +763,18 @@ class RTMedia
             wp_enqueue_style('wp-mediaelement', RTMEDIA_URL . 'lib/media-element/mediaelementplayer.min.css', '', RTMEDIA_VERSION);
             wp_enqueue_script('wp-mediaelement-start', RTMEDIA_URL . 'lib/media-element/wp-mediaelement.js', 'wp-mediaelement', RTMEDIA_VERSION, true);
         }
-
-        wp_enqueue_style('rtmedia-main', RTMEDIA_URL . 'app/assets/css/main.css', '', RTMEDIA_VERSION);
-        wp_enqueue_style('rtmedia-font-awesome', RTMEDIA_URL . 'app/assets/css/font-awesome.min.css', '', RTMEDIA_VERSION);
+        
+        global $rtmedia;
+        // Dont enqueue main.css if default styles is checked false in rtmedia settings
+        if( !( isset($rtmedia->options) && isset($rtmedia->options['styles_enabled']) && $rtmedia->options['styles_enabled']== 0)){
+            wp_enqueue_style('rtmedia-main', RTMEDIA_URL . 'app/assets/css/main.css', '', RTMEDIA_VERSION);
+        }
+        //wp_enqueue_style('rtmedia-font-awesome', RTMEDIA_URL . 'app/assets/css/font-awesome.min.css', '', RTMEDIA_VERSION);
+        wp_enqueue_style('rtmedia-font-icons', RTMEDIA_URL . 'app/assets/css/rtmedia-icons/rtm_font_icons.css', '', RTMEDIA_VERSION);
         if(! wp_script_is("rtp-foundation-js"))
             wp_enqueue_script('rtp-foundation-js', RTMEDIA_URL . 'lib/foundation/foundation.min.js', array('jquery'), RTMEDIA_VERSION);
         wp_enqueue_script('rtmedia-foundation-reveal', RTMEDIA_URL . 'lib/foundation/foundation.reveal.js', array('jquery','rtp-foundation-js'), RTMEDIA_VERSION);
+        wp_enqueue_script('rtmedia-foundation-section', RTMEDIA_URL . 'lib/foundation/foundation.section.js', array('jquery','rtp-foundation-js'), RTMEDIA_VERSION);
         wp_enqueue_script('rtmedia-main', RTMEDIA_URL . 'app/assets/js/rtMedia.js', array('jquery', 'wp-mediaelement'), RTMEDIA_VERSION);
         wp_enqueue_style('rtmedia-magnific', RTMEDIA_URL . 'lib/magnific/magnific.css', '', RTMEDIA_VERSION);
         wp_enqueue_script('rtmedia-magnific', RTMEDIA_URL . 'lib/magnific/magnific.js', '', RTMEDIA_VERSION);
@@ -774,12 +786,31 @@ class RTMedia
         wp_localize_script('rtmedia-main', 'rtmedia_empty_activity_msg', __('Please enter some content to post.',"rtMedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_empty_comment_msg', __('Empty Comment is not allowed.',"rtMedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_media_delete_confirmation', __('Are you sure you want to delete this media?',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_media_comment_delete_confirmation', __('Are you sure you want to delete this comment?',"rtMedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_album_delete_confirmation', __('Are you sure you want to delete this Album?',"rtMedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_drop_media_msg', __('Drop files here',"rtMedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_album_created_msg', ' ' . __('album created successfully.',"rtMedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_something_wrong_msg', __('Something went wrong. Please try again.',"rtMedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_empty_album_name_msg', __('Enter an album name.',"rtMedia"));
-        wp_localize_script('rtmedia-main', 'rtmedia_max_file_msg', __('Max file Limit',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_max_file_msg', __('Max file Size Limit : ',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_allowed_file_formats', __('Allowed File Formats',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_select_all_visible', __('Select All Visible',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_unselect_all_visible', __('Unselect All Visible',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_no_media_selected', __('Please select some media.',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_selected_media_delete_confirmation', __('Are you sure you want to delete the selected medias?',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_selected_media_move_confirmation', __('Are you sure you want to move the selected medias?',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_waiting_msg', __('Waiting',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_uploaded_msg', __('Uploaded',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_uploading_msg', __('Uploading',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_upload_failed_msg', __('Failed',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_close', __('Close',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_edit', __('Edit',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_edit_media', __('Edit Media',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_remove_from_queue', __('Remove from queue',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_add_more_files_msg', __('Add more files',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_file_extension_error_msg', __('File not supported',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_more', __('more',"rtMedia"));
+        wp_localize_script('rtmedia-main', 'rtmedia_less', __('less',"rtMedia"));
     }
 
     function set_bp_bar() {

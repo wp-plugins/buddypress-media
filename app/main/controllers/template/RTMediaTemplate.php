@@ -104,11 +104,23 @@ class RTMediaTemplate {
                     $rtaccount = 0;
                 }
                 //add_action("rtmedia_before_media_gallery",array(&$this,"")) ;
+		if( isset( $shortcode_attr[ 'attr' ] ) && isset( $shortcode_attr[ 'attr' ]['uploader'] ) && $shortcode_attr[ 'attr' ]['uploader'] == "before" ) {
+		    if( isset( $shortcode_attr[ 'attr' ]['media_type'] ) ) {
+//			wp_enqueue_script ( 'rtmedia-upload-filter', RTMEDIA_URL . 'app/assets/js/rtmedia_uploader_fitler.js', array( 'plupload', 'backbone' ), false, true );
+		    }
+		    echo RTMediaUploadShortcode::pre_render($shortcode_attr[ 'attr' ]);
+		}
 		echo "<div class='rtmedia_gallery_wrapper'>";
                 $this->add_hidden_fields_in_gallery ();
                 $gallery_template = apply_filters("rtmedia-before-template",$template,$shortcode_attr);
                 include $this->locate_template ( $gallery_template );
 		echo "</div>";
+		if( isset( $shortcode_attr[ 'attr' ] ) && isset( $shortcode_attr[ 'attr' ]['uploader'] ) && ( $shortcode_attr[ 'attr' ]['uploader'] == "after" || $shortcode_attr[ 'attr' ]['uploader'] == "true" ) ) {
+		    if( isset( $shortcode_attr[ 'attr' ]['media_type'] ) ) {
+//			wp_enqueue_script ( 'rtmedia-upload-filter', RTMEDIA_URL . 'app/assets/js/rtmedia_uploader_fitler.js', array( 'plupload', 'backbone' ), false, true );
+		    }
+		    echo RTMediaUploadShortcode::pre_render($shortcode_attr[ 'attr' ]);
+		}
             } else {
                 echo __ ( 'Invalid attribute passed for rtmedia_gallery shortcode.', 'rtmedia' );
                 return false;
@@ -445,25 +457,25 @@ class RTMediaTemplate {
 
         if ( $rtmedia_query->action_query->action != 'delete-comment' )
             return;
-
+        
         if ( count ( $_POST ) ) {
             /**
              * /media/id/delete-comment [POST]
              * Delete Comment by Comment ID
              */
-
+            
             if ( empty ( $_POST[ 'comment_id' ] ) ) {
                 return false;
             }
             $comment = new RTMediaComment();
             $id = $_POST['comment_id'];
             $activity_id = get_comment_meta($id, 'activity_id',true);
-
+            
             if(!empty($activity_id)){
-                $activity_deleted = bp_activity_delete_comment ($activity_id, $id);
-
-                $delete = bp_activity_delete( array( 'id' => $activity_id, 'type' => 'activity_comment' ) );
-
+                if(function_exists('bp_activity_delete_comment')){ //if buddypress is active
+                    $activity_deleted = bp_activity_delete_comment ($activity_id, $id);
+                    $delete = bp_activity_delete( array( 'id' => $activity_id, 'type' => 'activity_comment' ) );
+                }
             }
             $comment_deleted = $comment->remove ( $id );
 

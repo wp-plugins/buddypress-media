@@ -21,11 +21,10 @@
             </div>
         <?php }
         ?>
+     <?php do_action ( 'rtmedia_after_media_gallery_title' ); ?>
     
     <ul class="rtmedia-list rtmedia-list-media <?php echo rtmedia_media_gallery_class (); ?>">
         <?php if ( have_rtmedia () ) { ?>
-
-
 
             <?php while ( have_rtmedia () ) : rtmedia (); ?>
 
@@ -54,7 +53,7 @@
             else
                 $display = 'style="display:none;"';
             ?>
-            <a id="rtMedia-galary-next" <?php echo $display; ?> href="<?php echo rtmedia_pagination_next_link (); ?>"><?php _e( 'Next', 'rtmedia' ); ?></a>
+            <a id="rtMedia-galary-next" <?php echo $display; ?> href="<?php echo rtmedia_pagination_next_link (); ?>"><?php echo __ ( 'Load more', 'rtmedia' ); ?></a>
         </div>
     <?php } else { ?>
         <p><?php _e( "Oops !! There's no media found for the request !!", "rtmedia" ); ?></p>
