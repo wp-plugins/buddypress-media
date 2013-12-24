@@ -1153,8 +1153,10 @@ function rtmedia_user_album_list ( $get_all = false ) {
             )
                 if($album->context == 'profile')
                     $profile_option .= '<option value="' . $album->id . '">' . $album->media_title . '</option>';
-                else
-                    $option_group .= '<option value="' . $album->id . '">' . $album->media_title . '</option>';
+//                else
+//                    $option_group .= '<option value="' . $album->id . '">' . $album->media_title . '</option>';
+                //commented out group album section from album dropdown as user will be able to upload to profile albums from profile
+                // and group albums from group
 
         }
     }
@@ -1440,6 +1442,11 @@ function is_rtmedia_privacy_user_overide () {
 }
 
 function rtmedia_edit_media_privacy_ui(){
+    global $rtmedia_query;
+    if( isset( $rtmedia_query->query[ 'context' ] ) && $rtmedia_query->query[ 'context' ] == 'group'){
+        //if context is group i.e editing a group media, dont show the privacy dropdown
+        return false;
+    }
     $privacymodel = new RTMediaPrivacy();
     $privacy = $privacymodel->select_privacy_ui( $echo = false);
     if($privacy){
@@ -1931,4 +1938,13 @@ function rtmedia_delete_uploaded_media() {
     echo "0";
     die();
     
+}
+
+
+add_action('wp_footer','testing',11);
+function testing(){
+    
+//    echo "<pre>";
+//    var_dump($counts);
+//    echo "</pre>";
 }
