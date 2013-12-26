@@ -19,7 +19,7 @@ class RTMediaUploadEndpoint {
     /**
      *
      */
-    function template_redirect () {
+    function template_redirect ( $create_activity = true ) {
         ob_start ();
         if ( ! count ( $_POST ) ) {
             include get_404_template ();
@@ -36,7 +36,23 @@ class RTMediaUploadEndpoint {
 		if ( isset ( $_POST[ 'activity_id' ] ) && $_POST[ 'activity_id' ] != -1 ) {
                     $this->upload[ 'activity_id' ] = $_POST[ 'activity_id' ];
                     $activity_id = $_POST[ 'activity_id' ];
+                    
                 }
+                
+//                ////if media upload is being made for a group, identify the group privacy and set media privacy accordingly
+                if( isset( $this->upload[ 'context' ] ) && isset( $this->upload[ 'context_id' ] ) && $this->upload[ 'context' ] == 'group' && function_exists('groups_get_group') ){
+                    
+                    $group = groups_get_group( array( 'group_id' => $this->upload[ 'context_id' ] ) );
+                    if( isset($group->status) && $group->status != 'public'){
+                        // if group is not public, then set media privacy as 20, so only the group members can see the images
+                        $this->upload[ 'privacy' ] = '20';
+                    }else {
+                        // if group is public, then set media privacy as 0
+                        $this->upload[ 'privacy' ] = '0';
+                    }
+                    
+                }
+                
                 $rtupload = new RTMediaUpload ( $this->upload );
                 $mediaObj = new RTMediaMedia();
                 $media = $mediaObj->model->get ( array( 'id' => $rtupload->media_ids[ 0 ] ) );
@@ -57,24 +73,26 @@ class RTMediaUploadEndpoint {
 		    } else {
 			$rtMediaNav->refresh_counts ( $media[ 0 ]->media_author, array( "context" => "profile", 'media_author' => $media[ 0 ]->media_author ) );
 		    }
-		    if ( $activity_id == -1 && ( ! (isset ( $_POST[ "rtmedia_update" ] ) && $_POST[ "rtmedia_update" ] == "true")) ) {
-			$activity_id = $mediaObj->insert_activity ( $media[ 0 ]->media_id, $media[ 0 ] );
-		    } else {
-			$mediaObj->model->update ( array( 'activity_id' => $activity_id ), array( 'id' => $rtupload->media_ids[ 0 ] ) );
-			//
-			$same_medias = $mediaObj->model->get ( array( 'activity_id' => $activity_id ) );
+		    if( $create_activity !== false && class_exists('BuddyPress') ) {
+			if ( $activity_id == -1 && ( ! (isset ( $_POST[ "rtmedia_update" ] ) && $_POST[ "rtmedia_update" ] == "true")) ) {
+			    $activity_id = $mediaObj->insert_activity ( $media[ 0 ]->media_id, $media[ 0 ] );
+			} else {
+			    $mediaObj->model->update ( array( 'activity_id' => $activity_id ), array( 'id' => $rtupload->media_ids[ 0 ] ) );
+			    //
+			    $same_medias = $mediaObj->model->get ( array( 'activity_id' => $activity_id ) );
 
-			$update_activity_media = Array( );
-			foreach ( $same_medias as $a_media ) {
-			    $update_activity_media[ ] = $a_media->id;
+			    $update_activity_media = Array( );
+			    foreach ( $same_medias as $a_media ) {
+				$update_activity_media[ ] = $a_media->id;
+			    }
+			    $privacy = 0;
+			    if ( isset ( $_POST[ "privacy" ] ) ) {
+				$privacy = $_POST[ "privacy" ];
+			    }
+			    $objActivity = new RTMediaActivity ( $update_activity_media, $privacy, false );
+			    global $wpdb, $bp;
+			    $wpdb->update ( $bp->activity->table_name, array( "type" => "rtmedia_update", "content" => $objActivity->create_activity_html () ), array( "id" => $activity_id ) );
 			}
-			$privacy = 0;
-			if ( isset ( $_POST[ "privacy" ] ) ) {
-			    $privacy = $_POST[ "privacy" ];
-			}
-			$objActivity = new RTMediaActivity ( $update_activity_media, $privacy, false );
-			global $wpdb, $bp;
-			$wpdb->update ( $bp->activity->table_name, array( "type" => "rtmedia_update", "content" => $objActivity->create_activity_html () ), array( "id" => $activity_id ) );
 		    }
 
 		}
