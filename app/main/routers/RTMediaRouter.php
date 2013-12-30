@@ -73,6 +73,7 @@ class RTMediaRouter {
         global $wp_query;
 
         $return = isset ( $wp_query->query_vars[ $this->slug ] );
+	$return = apply_filters('rtmedia_return_is_template',$return,$this->slug);
         if ( $return ) {
             if ( isset ( $wp_query->query_vars[ 'action' ] ) && $wp_query->query_vars[ 'action' ] == 'bp_avatar_upload' )
                 $return = false;
@@ -160,16 +161,22 @@ class RTMediaRouter {
  */
     function rt_replace_the_content( $content = '' ) {
 	// Do we have new content to replace the old content?
-        global $new_rt_template;
-        load_template($new_rt_template);
-        return '';
-	$new_content = apply_filters( 'bp_replace_the_content', $content );
+	global $new_rt_template, $rt_template_content;
+	//var_dump($new_rt_template);
+	if( !isset( $rt_template_content ) ) {
+	    ob_start();
+	    load_template($new_rt_template);
+	    $rt_template_content = ob_get_contents ();
+	    ob_end_clean();
+	}
+	return $rt_template_content;
+        $new_content = apply_filters( 'bp_replace_the_content', $rt_template_content );
 
 	// Juggle the content around and try to prevent unsightly comments
-        if ( !empty( $new_content ) && ( $new_content !== $content ) ) {
+        if ( !empty( $new_content ) && ( $new_content !== $rt_template_content ) ) {
 
 		// Set the content to be the new content
-		$content = $new_content;
+		$rt_template_content = $new_content;
 
 		// Clean up after ourselves
 		unset( $new_content );
@@ -331,8 +338,10 @@ function rt_theme_compat_reset_post( $args = array() ) {
     function set_query_vars () {
 
         global $wp_query;
-        $query_vars_array = explode ( '/', $wp_query->query_vars[ $this->slug ] );
-
+	$query_vars_array = "";
+	if( isset( $wp_query->query_vars[ $this->slug ] ) ) {
+	    $query_vars_array = explode ( '/', $wp_query->query_vars[ $this->slug ] );
+	}
         $this->query_vars = apply_filters ( 'rtmedia_query_vars', $query_vars_array );
     }
 

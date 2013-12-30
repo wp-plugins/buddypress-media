@@ -51,7 +51,7 @@ function rtmedia_title () {
 
 function get_rtmedia_gallery_title () {
     global $rtmedia_query;
-    $title = '';
+    $title = false;
     if( isset( $rtmedia_query->media_query['media_type'] ) && !is_array( $rtmedia_query->media_query['media_type']) && $rtmedia_query->media_query['media_type'] != "") {
 
         if($rtmedia_query->media_query['media_type'] == "music") {
@@ -66,7 +66,8 @@ function get_rtmedia_gallery_title () {
         $id = $rtmedia_query->media_query['album_id'];
         return get_rtmedia_title($id);
     }
-    return false;
+    $title = apply_filters('rtmedia_gallery_title',$title);
+    return $title;
 }
 
 function get_rtmedia_title($id) {
@@ -399,6 +400,10 @@ function rtmedia_delete_allowed () {
 
     $flag = $rtmedia_media->media_author == get_current_user_id ();
 
+    if( isset($rtmedia_media->context) && $rtmedia_media->context == 'group' && function_exists('bp_group_is_admin')){
+            $flag = ( bp_group_is_admin() || bp_group_is_mod());
+    }
+
     if(!$flag)
         $flag = is_super_admin ();
 
@@ -668,7 +673,9 @@ function rmedia_single_comment ( $comment ) {
     $html .= '<span class ="rtmedia-comment-author">'
             . '' . $user_name . '</span>';
     $html .= '<span class="rtmedia-comment-content">' . $comment[ 'comment_content' ] . '</span>';
-    if(isset( $comment['user_id'] ) && ( is_rt_admin() || ( get_current_user_id() == $comment['user_id'] )) ){ // show delete button for comment author and admins
+
+    global $rtmedia_media;
+    if(isset( $comment['user_id'] ) && isset( $rtmedia_media->media_author) && ( is_rt_admin() || ( get_current_user_id() == $comment['user_id'] || $rtmedia_media->media_author == get_current_user_id() )) ){ // show delete button for comment author and admins
         $html .= '<i data-id="' . $comment['comment_ID'] . '" class = "rtmedia-delete-comment rtmicon-times" title="' . __('Delete Comment') .'"></i>';
     }
 
@@ -1938,6 +1945,23 @@ function rtmedia_delete_uploaded_media() {
     echo "0";
     die();
 
+}
+
+function rtmedia_is_edit_page($new_edit = null){
+    global $pagenow;
+    //make sure we are on the backend
+    if (!is_admin()) {
+	return false;
+    }
+    if($new_edit == "edit") {
+	return in_array( $pagenow, array( 'post.php',  ) );
+    }
+    elseif($new_edit == "new") { //check for new post page
+	return in_array( $pagenow, array( 'post-new.php' ) );
+    }
+    else { //check for either new or edit
+	return in_array( $pagenow, array( 'post.php', 'post-new.php' ) );
+    }
 }
 
 //update the group media privacy according to the group privacy settings when group settings are changed
