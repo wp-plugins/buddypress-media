@@ -474,19 +474,19 @@
 		p {
 			padding: 5px 0;
 		}
-	}
-        .rt-clear:after{
-            display: block;
-            height: 0;
-            line-height: 0;
-            clear: both;
-            content: '.';
-            visibility : hidden;
-        }
+	}        
         .rtm-media-loading {
             text-align: center;
             padding : 20px 0;
         }
+}
+.rt-clear:after{
+    display: block;
+    height: 0;
+    line-height: 0;
+    clear: both;
+    content: '.';
+    visibility : hidden;
 }
 .rtmedia-activity-container {
             @extend .rtmedia-container;
@@ -1399,4 +1399,15 @@ button.rtp-lb-close {
 .rtmedia-footer-link {
     text-align: center;
     padding : 7px;
+}
+
+// videoplayer fix for buddypress default theme
+#bp-default {
+    .rtmedia-container {
+        embed { height :100%;}
+        .me-plugin { height : 100%; }
+    }
+    .rtmedia-activity-container .mejs-overlay-button{
+        margin-left : -50px;
+    }
 }
