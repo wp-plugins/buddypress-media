@@ -1793,6 +1793,22 @@ function rtmedia_admin_premium_page($page) {
         </div>
     </div>
     <?php
+    } else if( $page == "rtmedia-theme") {
+    ?>
+	<div class="rtmedia-theme-page-container">
+	    <h2><?php _e('Coming Soon...!!!','rtmedia'); ?></h2>
+	    <p><?php  _e('Are you a developer and want your rtMedia compatible theme to be listed here? just mail us at','rtmedia') ?> <a href="mailto:product@rtcamp.com"><?php _e('product@rtcamp.com','rtmedia') ?></a>.</p>
+	</div>
+    <?php
+    } else if( $page == "rtmedia-hire-us" ) {
+     $url = admin_url()."admin.php?page=rtmedia-premium";
+    ?>
+	<div class="rtmedia-hire-us-page-container">
+	    <p>
+		<?php  _e('Looking for some custom features with the rtMedia? Go ','rtmedia'); ?> <a href="<?php echo $url; ?>"><?php _e('Premium now','rtmedia') ?></a> <?php _e('or reach us','rtmedia') ?> <a href="https://rtcamp.com/contact/?purpose=hire" target="_blank"><?php  _e('here','rtmedia'); ?> </a>.
+	    </p>
+	</div>
+    <?php
     }
 }
 add_action('wp_footer', 'rtmedia_link_in_footer');
@@ -1877,25 +1893,40 @@ function rtmedia_convert_date($_date) // $date --> time(); value
     $date = $date->format('U');
     $cur_time = time();
     $diff = $cur_time - $date;
-    $phrase = array( __('second'), __('minute'), __('hour') );
+    $time_unit = array( 'second', 'minute', 'hour' );
     //$phrase = array('second','minute','hour','day','week','month','year','decade');
     //$length = array(1,60,3600,86400,604800,2630880,31570560,315705600);
     $length = array(1,60,3600,86400);
+    $ago_text = __('%s ago ', 'rtmedia');
 
     for($i =sizeof($length)-1; ($i >=0) && (($no = $diff/$length[$i])<= 1); $i--);
     if($i < 0) $i=0;
     if($i<=2){ //if posted in last 24 hours
         $_time = $cur_time -($diff%$length[$i]);
 
-        $no = floor($no); if($no > 1) $phrase[$i] .='s';
-        $value=sprintf("%d %s ",$no,$phrase[$i]);
+        $no = floor($no);
+        switch($time_unit[$i]) {
+            case 'second':
+                $time_unit_phrase = _n( '1 second', '%s seconds', $no, 'rtmedia');
+                break;
+            case 'minute':
+                $time_unit_phrase = _n( '1 minute', '%s minutes', $no, 'rtmedia');
+                break;
+            case 'hour':
+                $time_unit_phrase = _n( '1 hour', '%s hours', $no, 'rtmedia');
+                break;
+            default:
+                // should not happen
+                $time_unit_phrase = '%s unknown';
+        }
+        $value=sprintf($time_unit_phrase.' ',$no);
 
         if(($stf == 1) && ($i >= 1) && (($cur_tm-$_time) > 0)) $value .= rtmedia_convert_date($_time);
-
-        return $value. __('ago ', 'rtmedia');
+        return sprintf($ago_text, $value);
     }
     else {
-       return __( date("F d, Y ", strtotime($_date)), 'rtmedia' );
+       /* translators: date format, see http://php.net/date */
+       return date_i18n( __("d F Y ", 'rtmedia' ), strtotime($_date));
     }
 }
 
