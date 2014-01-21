@@ -93,6 +93,9 @@
                     display: block;
                     width: 100%;
                 }
+                .rtmedia-edit-change-album {
+                    margin-top : 15px;
+                }
                 .rtmedia-edit-title {
                     label {
                         display: block;
@@ -836,6 +839,7 @@ button.rtp-lb-close {
 .rtmedia-container #rtMedia-queue-list {
     margin-bottom : 10px;
     line-height : 20px;
+    width : 100%;
     tr td, tr th {
         padding: 3px 8px;
         //border-bottom : 1px solid #ffeca0;
@@ -1294,6 +1298,7 @@ button.rtp-lb-close {
         }
         .mejs-audio {
             display: inline-block;
+            max-width : 400px;
         }
     }
         
