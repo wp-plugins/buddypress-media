@@ -6,7 +6,7 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Requires at least: WordPress 3.6
 Tested up to: WordPress 3.7 + BuddyPress 1.8.1
-Stable tag: 3.5.1
+Stable tag: 3.5.2
 
 Add albums, photo, audio/video encoding, privacy, sharing, front-end uploads & more. All this works mobile/tablets devices.
 
@@ -132,6 +132,14 @@ http://www.youtube.com/watch?v=dJrykKQGDcs
 == Changelog ==
 
 Please visit [rtMedia's Roadmap page](http://rtcamp.com/rtmedia/roadmap/?utm_source=readme&utm_medium=plugin&utm_campaign=buddypress-media "Visit rtMedia's Features page") to get some details about future releases.
+
+= 3.5.2 =
+* Updated dutch translation, thanks to [carry2web] (http://profiles.wordpress.org/carry2web)
+* Enable / disable media per group
+* User can specify media type to be upload in uploader shortcode
+* Show content of single album using gallery shortcode
+* Custom thumbnail for medias
+* Bug fixes
 
 = 3.5.1 =
 * Fix for AudioPlayer under LightBox in WordPress TwentyFourteen Theme
@@ -676,8 +684,8 @@ Please visit [rtMedia's Roadmap page](http://rtcamp.com/rtmedia/roadmap/?utm_sou
 
 == Upgrade Notice ==
 
-= 3.5.1 =
-Requires BuddyPress 1.7 or higher, if using BuddyPress. Fix for AudioPlayer under LightBox in WordPress TwentyFourteen Theme, Fix for mobile uploads, Bug fixes
+= 3.5.2 =
+Requires BuddyPress 1.7 or higher, if using BuddyPress. Dutch translation updated, Updaed gallery shortcode for album, Custom thumbnail for media, Bug fixes
 
 == Sponsors ==
 
@@ -690,6 +698,7 @@ Requires BuddyPress 1.7 or higher, if using BuddyPress. Fix for AudioPlayer unde
 
 rtMedia includes [full translation support](https://rtcamp.com/tutorials/rtmedia-translation/?utm_source=readme&utm_medium=plugin&utm_campaign=buddypress-media). Head over to the [translation project](http://rtcamp.com/translate/projects/rtmedia/?utm_source=readme&utm_medium=plugin&utm_campaign=buddypress-media) to contribute your translations. If you don't see the language of your choice, let us know in the support forum, we'll add it.
 
+* [Dutch](https://rtcamp.com/translate/projects/rtmedia/nl/default) translation by [carry2web] (http://profiles.wordpress.org/carry2web)
 * [Italian](https://rtcamp.com/translate/projects/rtmedia/it/default) translation by [Paolo]
 * [Dutch](https://rtcamp.com/translate/projects/rtmedia/nl/default) translation by [rjpj](http://profiles.wordpress.org/rjpj)
 * [Polish](https://rtcamp.com/translate/projects/rtmedia/pl/default) translation by [Polski_Ziom](http://profiles.wordpress.org/polski_ziom)

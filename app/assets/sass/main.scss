@@ -836,7 +836,7 @@ button.rtp-lb-close {
    
 /*}*/
 
-.rtmedia-container #rtMedia-queue-list {
+.rtmedia-container .rtMedia-queue-list {
     margin-bottom : 10px;
     line-height : 20px;
     width : 100%;
@@ -1306,10 +1306,9 @@ button.rtp-lb-close {
 }
 
 .rtmedia-admin-notice {
-    padding: 4px;
-    border: 1px dashed;
+    padding: 4px;    
     text-align: center;
-    margin: 10px 0;
+    margin: 2px 0;
 }
 .rtmedia-info {
     color : green;
