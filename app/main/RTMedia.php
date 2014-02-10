@@ -356,7 +356,7 @@ class RTMedia
             'levels' => array(
                 60 => __('<strong>Private</strong> - Visible only to the user', 'rtmedia'),
                 40 => __('<strong>Friends</strong> - Visible to user\'s friends', 'rtmedia'),
-                20 => __('<strong>Users</strong> - Visible to registered users', 'rtmedia'),
+                20 => __('<strong>Logged in Users</strong> - Visible to registered users', 'rtmedia'),
                 0 => __('<strong>Public</strong> - Visible to the world', 'rtmedia')
             )
         );
@@ -685,6 +685,9 @@ class RTMedia
 
         global $rtmedia_ajax;
         $rtmedia_ajax = new RTMediaAJAX();
+        //API Classes
+        global $rtmediajsonapi;
+        $rtmediajsonapi = new RTMediaJsonApi();
 
         do_action('bp_media_init'); // legacy For plugin using this actions
         do_action('rtmedia_init');
