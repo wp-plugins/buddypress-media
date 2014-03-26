@@ -1153,13 +1153,19 @@ function rtmedia_delete_form ( $echo = true) {
  * @param type $attr
  */
 function rtmedia_uploader ( $attr = '' ) {
-    if ( function_exists ( 'bp_is_blog_page' ) && ! bp_is_blog_page () ) {
-        if ( function_exists ( 'bp_is_user' ) && bp_is_user () && function_exists ( 'bp_displayed_user_id' ) && bp_displayed_user_id () == get_current_user_id () )
-            echo RTMediaUploadShortcode::pre_render ( $attr );
-        else if ( function_exists ( 'bp_is_group' ) && bp_is_group () ) {
-            if ( can_user_upload_in_group () )
-                echo RTMediaUploadShortcode::pre_render ( $attr );
-        }
+    $allow_upload = apply_filters( 'rtmedia_allow_uploader_view', true, 'media_gallery' );
+    if( $allow_upload ) {
+	if ( function_exists ( 'bp_is_blog_page' ) && ! bp_is_blog_page () ) {
+	    if ( function_exists ( 'bp_is_user' ) && bp_is_user () && function_exists ( 'bp_displayed_user_id' ) && bp_displayed_user_id () == get_current_user_id () ) {
+		echo RTMediaUploadShortcode::pre_render ( $attr );
+	    } else if ( function_exists ( 'bp_is_group' ) && bp_is_group () ) {
+		if ( can_user_upload_in_group () ) {
+		    echo RTMediaUploadShortcode::pre_render ( $attr );
+		}
+	    }
+	}
+    } else {
+	echo "<div class='rtmedia-upload-not-allowed'>" . apply_filters( 'rtmedia_upload_not_allowed_message', __('You are not allowed to upload/attach media.','rtmedia'), 'media_gallery' ) . "</div>";
     }
 }
 
@@ -2163,4 +2169,68 @@ function is_rtmedia_page() {
     }
 
     return $rtmedia_interaction->routes[RTMEDIA_MEDIA_SLUG]->is_template();
+}
+
+// formatseconds function to be used in migration in importing
+function rtmedia_migrate_formatseconds ( $secondsLeft ) {
+
+        $minuteInSeconds = 60;
+        $hourInSeconds = $minuteInSeconds * 60;
+        $dayInSeconds = $hourInSeconds * 24;
+
+        $days = floor ( $secondsLeft / $dayInSeconds );
+        $secondsLeft = $secondsLeft % $dayInSeconds;
+
+        $hours = floor ( $secondsLeft / $hourInSeconds );
+        $secondsLeft = $secondsLeft % $hourInSeconds;
+
+        $minutes = floor ( $secondsLeft / $minuteInSeconds );
+
+        $seconds = $secondsLeft % $minuteInSeconds;
+
+        $timeComponents = array( );
+
+        if ( $days > 0 ) {
+            $timeComponents[ ] = $days . " day" . ($days > 1 ? "s" : "");
+        }
+
+        if ( $hours > 0 ) {
+            $timeComponents[ ] = $hours . " hour" . ($hours > 1 ? "s" : "");
+        }
+
+        if ( $minutes > 0 ) {
+            $timeComponents[ ] = $minutes . " minute" . ($minutes > 1 ? "s" : "");
+        }
+
+        if ( $seconds > 0 ) {
+            $timeComponents[ ] = $seconds . " second" . ($seconds > 1 ? "s" : "");
+        }
+        if ( count ( $timeComponents ) > 0 ) {
+            $formattedTimeRemaining = implode ( ", ", $timeComponents );
+            $formattedTimeRemaining = trim ( $formattedTimeRemaining );
+        } else {
+            $formattedTimeRemaining = "No time remaining.";
+        }
+
+        return $formattedTimeRemaining;
+    }
+
+
+/**
+ * echo the size of the media file
+ * @global type $rtmedia_media
+ */
+function rtmedia_file_size () {
+
+	global $rtmedia_backbone;
+	if ( $rtmedia_backbone[ 'backbone' ] ) {
+		echo '<%= file_size %>';
+	} else {
+		global $rtmedia_media;
+		if( isset( $rtmedia_media->file_size ) ){
+			return $rtmedia_media->file_size;
+		}else{
+			return filesize( get_attached_file( $rtmedia_media->media_id ) );
+		}
+	}
 }

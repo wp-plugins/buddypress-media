@@ -108,8 +108,13 @@ class RTMediaBuddyPressActivity {
     }
 
     function bp_activity_posted_update ( $content, $user_id, $activity_id ) {
+		global $wpdb, $bp;
+		$updated_content = "";
+
+		// hook for rtmedia buddypress before activity posted
+		do_action( 'rtmedia_bp_before_activity_posted', $content, $user_id, $activity_id );
+
         if ( isset ( $_POST[ "rtMedia_attached_files" ] ) && is_array ( $_POST[ "rtMedia_attached_files" ] ) ) {
-            global $wpdb, $bp;
             $updated_content = $wpdb->get_var ( "select content from  {$bp->activity->table_name} where  id= $activity_id" );
 
             $objActivity = new RTMediaActivity ( $_POST[ "rtMedia_attached_files" ], 0, $updated_content );
@@ -121,6 +126,9 @@ class RTMediaBuddyPressActivity {
             $sql = "update $mediaObj->table_name set activity_id = '" . $activity_id . "' where blog_id = '".get_current_blog_id()."' and id in (" . implode ( ",", $_POST[ "rtMedia_attached_files" ] ) . ")";
             $wpdb->query ( $sql );
         }
+		// hook for rtmedia buddypress after activity posted
+		do_action( 'rtmedia_bp_activity_posted', $updated_content, $user_id, $activity_id );
+
         if ( isset ( $_POST[ 'rtmedia-privacy' ] ) ) {
             $privacy = -1;
             if ( is_rtmedia_privacy_enable () ) {
@@ -164,9 +172,13 @@ class RTMediaBuddyPressActivity {
         wp_localize_script ( 'rtmedia-backbone', 'is_edit_allowed', $is_edit_allowed );
         wp_localize_script ( 'rtmedia-backbone', 'rtMedia_update_plupload_config', $params );
 
-
-        $uploadView = new RTMediaUploadView ( array( 'activity' => true ) );
-        $uploadView->render ( 'uploader' );
+	$allow_upload = apply_filters( 'rtmedia_allow_uploader_view', true, 'activity' );
+	if( $allow_upload ) {
+	    $uploadView = new RTMediaUploadView ( array( 'activity' => true ) );
+	    $uploadView->render ( 'uploader' );
+	} else {
+	    echo "<div class='rtmedia-upload-not-allowed'>" . apply_filters( 'rtmedia_upload_not_allowed_message', __('You are not allowed to upload/attach media.','rtmedia'), 'activity' ) . "</div>";
+	}
     }
 
     function override_allowed_tags ( $activity_allowedtags ) {
