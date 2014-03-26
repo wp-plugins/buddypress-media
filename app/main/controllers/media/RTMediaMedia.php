@@ -367,7 +367,7 @@ class RTMediaMedia {
             $attachments[ ] = array(
                 'post_mime_type' => $file[ 'type' ],
                 'guid' => $file[ 'url' ],
-                'post_title' => $uploaded[ 'title' ] ? $uploaded[ 'title' ] : $file[ 'name' ],
+                'post_title' => $uploaded[ 'title' ] ? $uploaded[ 'title' ] : preg_replace("/\\.[^.\\s]{3,4}$/", "", $file[ 'name' ]),
                 'post_content' => $uploaded[ 'description' ] ? $uploaded[ 'description' ] : '',
                 'post_parent' => $album_id,
                 'post_author' => $uploaded[ 'media_author' ]
@@ -472,7 +472,10 @@ class RTMediaMedia {
                 'context_id' => $uploaded[ 'context_id' ],
                 'privacy' => $uploaded[ 'privacy' ]
             );
-
+	    if( isset( $file_object ) && isset( $file_object[0] ) && isset( $file_object[0]['file'] ) ) {
+		$media['file_size'] = filesize( $file_object[0]['file'] );
+	    }
+	    $media['upload_date'] = $attachment['post_date'];
             $media_id[ ] = $this->model->insert ( $media );
         }
         return $media_id;

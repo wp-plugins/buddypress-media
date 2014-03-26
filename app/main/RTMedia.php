@@ -92,6 +92,9 @@ class RTMedia
         add_action('rt_db_upgrade', array($this, 'fix_group_media_privacy'));
         add_action('rt_db_upgrade', array($this, 'fix_db_collation'));
         $this->update_db();
+		remove_action('rt_db_upgrade', array($this, 'fix_privacy'));
+		remove_action('rt_db_upgrade', array($this, 'fix_group_media_privacy'));
+		remove_action('rt_db_upgrade', array($this, 'fix_db_collation'));
         $this->default_thumbnail = apply_filters('rtmedia_default_thumbnail', RTMEDIA_URL . 'assets/thumb_default.png');
         add_action('init', array($this, 'check_global_album'));
         add_action('plugins_loaded', array($this, 'init'), 20);
@@ -834,6 +837,7 @@ class RTMedia
         wp_localize_script('rtmedia-main', 'rtmedia_more', __('more',"rtmedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_less', __('less',"rtmedia"));
         wp_localize_script('rtmedia-main', 'rtmedia_delete_uploaded_media', __('This media is uploaded. Are you sure you want to delete this media?',"rtmedia"));
+		wp_localize_script('rtmedia-main', 'rtm_wp_version', get_bloginfo('version') );
         wp_localize_script ( 'rtmedia-backbone', 'rMedia_loading_media', RTMEDIA_URL . "app/assets/img/boxspinner.gif" );
 	global $rtmedia_query;
 	if( class_exists('BuddyPress') ) {
@@ -1005,7 +1009,7 @@ function rtmedia_update_site_option($option_name, $option_value) {
 
 function get_rtmedia_group_link($group_id) {
     $group = groups_get_group(array('group_id' => $group_id));
-    return home_url(trailingslashit(bp_get_groups_root_slug()) . $group->slug);
+    return apply_filters( 'rtmedia_get_group_link', home_url( trailingslashit( bp_get_groups_root_slug() ) . $group->slug) );
 }
 
 function rtmedia_get_site_option($option_name, $default = false) {
