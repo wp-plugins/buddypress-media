@@ -1,4 +1,5 @@
 var rtMagnificPopup;
+var rtm_masonry_container;
 function apply_rtMagnificPopup(selector){
     jQuery('document').ready(function($) {
 	var rt_load_more = "";
@@ -28,12 +29,12 @@ function apply_rtMagnificPopup(selector){
                         return item.el.attr('title') + '<small>by Marsel Van Oosten</small>';
                     }
                 },
-                disableOn: function() {
-                    if (jQuery(window).width() < 600) {
-                        return false;
-                    }
-                    return true;
-                },
+//                disableOn: function() {
+//                    if (jQuery(window).width() < 600) {
+//                        return false;
+//                    }
+//                    return true;
+//                },
                 callbacks: {
                     ajaxContentAdded: function() {
 
@@ -402,18 +403,18 @@ jQuery('document').ready(function($) {
             rtm_mfp.prev();
         });
 
-//       jQuery('.mfp-content .rtmedia-media').swipe({
-//           //Generic swipe handler for all directions
-//           swipeLeft:function(event, direction, distance, duration, fingerCount) 	// bind leftswipe
-//           {
-//               rtm_mfp.next();
-//           },
-//           swipeRight:function(event, direction, distance, duration, fingerCount) 	// bind rightswipe
-//           {
-//               rtm_mfp.prev();
-//           },
-//           threshold:0
-//       });
+       jQuery('.mfp-content .rtmedia-media').swipe({
+           //Generic swipe handler for all directions
+           swipeLeft:function(event, direction, distance, duration, fingerCount) 	// bind leftswipe
+           {
+               rtm_mfp.next();
+           },
+           swipeRight:function(event, direction, distance, duration, fingerCount) 	// bind rightswipe
+           {
+               rtm_mfp.prev();
+           },
+           threshold:0
+       });
    }
 
     function rtmedia_disable_popup_navigation_comment_focus() {
@@ -511,9 +512,18 @@ jQuery('document').ready(function($) {
 
 //    masonry code
     if( typeof rtmedia_masonry_layout != "undefined" && rtmedia_masonry_layout == "true" ) {
-        jQuery('.rtmedia-list-media').masonry({
-            columnWidth: 190,
+        rtm_masonry_container = jQuery('.rtmedia-container .rtmedia-list')
+        rtm_masonry_container.masonry({
             itemSelector: '.rtmedia-list-item'
+        });
+        setInterval( function(){
+            jQuery.each( jQuery('.rtmedia-list.masonry .rtmedia-item-title' ), function( i, item ) {
+                jQuery(item ).width( jQuery(item).siblings('.rtmedia-item-thumbnail' ).children('img').width());
+            });
+            rtm_masonry_reload( rtm_masonry_container );
+        } , 1000);
+        jQuery.each( jQuery('.rtmedia-list.masonry .rtmedia-item-title' ), function( i, item ) {
+            jQuery(item ).width( jQuery(item).siblings('.rtmedia-item-thumbnail' ).children('img').width());
         });
     }
 });
@@ -604,3 +614,16 @@ function rtm_is_element_exist( el ) {
         return false;
     }
 }
+
+function rtm_masonry_reload( el ) {
+    setTimeout(function(){
+        // we make masonry recalculate the element based on their current state.
+        el.masonry('reload');
+    }, 250);
+}
+
+window.onload=function(){
+    if( typeof rtmedia_masonry_layout != "undefined" && rtmedia_masonry_layout == "true" ) {
+        rtm_masonry_reload( rtm_masonry_container );
+    }
+};

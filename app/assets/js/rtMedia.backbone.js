@@ -113,12 +113,10 @@ jQuery( function ( $ ) {
                         $( element ).parent().parent().prevAll( "input[type=hidden]" ).each( function ( e ) {
                             query[$( this ).attr( "name" )] = $( this ).val();
                         } );
-                    } else {
-                        $( el ).find( "input[type=hidden]" ).each( function ( e ) {
-                            query[$( this ).attr( "name" )] = $( this ).val();
-                        } );
                     }
-
+                    $( el ).find( "input[type=hidden]" ).each( function ( e ) {
+                        query[$( this ).attr( "name" )] = $( this ).val();
+                    } );
                 }
                 this.fetch( {
                     data: query,
@@ -143,9 +141,6 @@ jQuery( function ( $ ) {
                         } );
                         //element.show();
                         jQuery('.rtmedia-container .rtmedia-list-media' ).css('opacity', '1');
-                        if( typeof rtmedia_masonry_layout != "undefined" && rtmedia_masonry_layout == "true" ) {
-                            jQuery('.rtmedia-list-media').masonry( 'reload' );
-                        }
                         rtMediaHook.call( 'rtmedia_after_gallery_load' );
                     }
                 } );
@@ -207,8 +202,9 @@ jQuery( function ( $ ) {
                 $( that.el ).siblings( '.rtmedia_next_prev' ).children( '#rtMedia-galary-next' ).show();
                 //$("#rtMedia-galary-next").show();
             }
-
-
+            if( typeof rtmedia_masonry_layout != "undefined" && rtmedia_masonry_layout == "true" ) {
+                    rtm_masonry_reload( rtm_masonry_container );
+            }
         },
         appendTo: function ( media ) {
             //console.log("append");
