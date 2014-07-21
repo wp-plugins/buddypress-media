@@ -423,7 +423,7 @@ class RTMediaQuery {
 		$this->original_query = $query;
 		$this->query          = wp_parse_args( $query, $this->query );
 		//Set Json
-		$allowed_query = apply_filters( 'rtmedia_allowed_query', array( "id", "media_id", "media_type", "media_author", "album_id", "context", "context_id", "global", "privacy" ) );
+		$allowed_query = apply_filters( 'rtmedia_allowed_query', array( "id", "media_id", "media_type", "media_author", "album_id", "context", "context_id", "global", "privacy", "per_page" ) );
 		if ( isset ( $_REQUEST[ "rtmedia_shortcode" ] ) ){
 			$query_data = $_REQUEST;
 			foreach ( $query_data as $key => $val ) {
@@ -451,6 +451,7 @@ class RTMediaQuery {
 		if ( isset ( $this->query ) && isset ( $this->query[ "global" ] ) ){
 			if ( $this->query[ "global" ] == "true" ){
 				$this->shortcode_global = true;
+				add_filter('rtmedia-model-where-query', array( 'RTMediaGalleryShortcode' , 'rtmedia_query_where_filter'), 10 ,3 );
 				if ( isset ( $this->query[ "context_id" ] ) ){
 					unset ( $this->query[ "context_id" ] );
 				}
@@ -470,6 +471,7 @@ class RTMediaQuery {
 		$this->set_media_type();
 		$this->media_query = $this->query;
 		do_action( 'rtmedia_set_query' );
+
 		return $this->get_data();
 	}
 
@@ -566,6 +568,12 @@ class RTMediaQuery {
 			}
 		}
 
+		if ( isset( $this->media_query[ 'per_page' ] ) ){
+			//Do not include per_page in sql query to get media
+			$this->action_query->per_page_media = intval( $this->media_query[ 'per_page' ] );
+			unset( $this->media_query[ 'per_page' ] );
+		}
+
 		$this->media_query = apply_filters( 'rtmedia_media_query', $this->media_query, $this->action_query, $this->query );
 
 		if ( $this->is_album_gallery() ){
@@ -578,14 +586,24 @@ class RTMediaQuery {
 				$context_id     = $group_id;
 			}
 
+			$media_for_total_count = count( $this->model->{$query_function} ( $context_id, false, false ) );
+
+			$this->action_query = apply_filters( 'rtmedia_action_query_in_populate_media', $this->action_query, $media_for_total_count );
+
 			if ( $order_by == ' ' ){
 				$pre_media = $this->model->{$query_function} ( $context_id, ( $this->action_query->page - 1 ) * $this->action_query->per_page_media, $this->action_query->per_page_media );
 			} else {
 				$pre_media = $this->model->{$query_function} ( $context_id, ( $this->action_query->page - 1 ) * $this->action_query->per_page_media, $this->action_query->per_page_media, $order_by );
 			}
-
-			$media_for_total_count = count( $this->model->{$query_function} ( $context_id, false, false ) );
 		} else {
+
+			/**
+			 * count total medias in album irrespective of pagination
+			 */
+			$media_for_total_count = $this->model->get_media( $this->media_query, false, false, false, true );
+
+			$this->action_query = apply_filters( 'rtmedia_action_query_in_populate_media', $this->action_query, $media_for_total_count );
+
 			/**
 			 * fetch media entries from rtMedia context
 			 */
@@ -594,11 +612,6 @@ class RTMediaQuery {
 			} else {
 				$pre_media = $this->model->get_media( $this->media_query, ( $this->action_query->page - 1 ) * $this->action_query->per_page_media, $this->action_query->per_page_media, $order_by );
 			}
-
-			/**
-			 * count total medias in album irrespective of pagination
-			 */
-			$media_for_total_count = $this->model->get_media( $this->media_query, false, false, false, true );
 		}
 		//add filter that was added to filter group media when context is profile
 		// remove_filter('rtmedia-model-where-query',array($this,'rtmedia_model_where_query'), 10, 3);
@@ -669,7 +682,7 @@ class RTMediaQuery {
 		$this->album                     = $this->media;
 		$this->media_query[ 'album_id' ] = $this->action_query->id;
 
-		if( apply_filters( 'rtmedia_unset_action_query_id_album', true ) ) {
+		if ( apply_filters( 'rtmedia_unset_action_query_id_album', true ) ){
 			unset ( $this->action_query->id );
 		}
 
@@ -733,6 +746,10 @@ class RTMediaQuery {
 				$this->populate_post_data( $this->media );
 			}
 		}
+		if( $this->shortcode_global ){
+			remove_filter('rtmedia-model-where-query', array( 'RTMediaGalleryShortcode' , 'rtmedia_query_where_filter'), 10 ,3 );
+		}
+
 	}
 
 	/**
