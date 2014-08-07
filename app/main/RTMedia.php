@@ -901,7 +901,11 @@ class RTMedia
 			wp_localize_script ( 'rtmedia-main', 'rtmedia_masonry_layout', 'false' );
 		}
                 
-                wp_localize_script( 'rtmedia-backbone', 'rtmedia_load_more_or_pagination', $rtmedia->options['general_display_media'] );
+                if( isset( $rtmedia->options['general_display_media'] ) ) {
+                    wp_localize_script( 'rtmedia-backbone', 'rtmedia_load_more_or_pagination', $rtmedia->options['general_display_media'] );
+                } else {
+                    wp_localize_script( 'rtmedia-backbone', 'rtmedia_load_more_or_pagination', 'load_more' );
+                }
     }
 
     function set_bp_bar() {
@@ -1019,6 +1023,8 @@ function get_rtmedia_permalink($id) {
     $media = $mediaModel->get(array('id' => intval($id)));
     global $rtmedia_query;
 
+    // Adding filter to get permalink for current blog
+    add_filter( 'bp_get_root_domain', 'rtmedia_get_current_blog_url');
 
     if (!isset($media[0]->context)) {
         if (function_exists("bp_get_groups_root_slug") && isset($rtmedia_query->query) && isset($rtmedia_query->query["context"]) && $rtmedia_query->query["context"] == "group") {
@@ -1043,6 +1049,10 @@ function get_rtmedia_permalink($id) {
     }
 
     $parent_link = trailingslashit($parent_link);
+    
+    // Removing filter so that doesn't affect other calls to this function
+    remove_filter( 'bp_get_root_domain', 'rtmedia_get_current_blog_url');
+    
     return trailingslashit($parent_link . RTMEDIA_MEDIA_SLUG . '/' . $id);
 }
 
@@ -1065,7 +1075,7 @@ function rtmedia_update_site_option($option_name, $option_value) {
 
 function get_rtmedia_group_link($group_id) {
     $group = groups_get_group(array('group_id' => $group_id));
-    return apply_filters( 'rtmedia_get_group_link', home_url( trailingslashit( bp_get_groups_root_slug() ) . $group->slug) );
+    return apply_filters( 'rtmedia_get_group_link', bp_get_group_permalink( $group ) );
 }
 
 function rtmedia_get_site_option($option_name, $default = false) {

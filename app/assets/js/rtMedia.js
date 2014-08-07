@@ -9,7 +9,11 @@ function apply_rtMagnificPopup(selector){
 	    rt_load_more = rtmedia_load_more;
 	}
        if( rtmedia_lightbox_enabled == '1'){ // if lightbox is enabled.
-
+            
+            if( $('.activity-item .rtmedia-activity-container .rtmedia-list-item > a').siblings( 'p' ).children( 'a' ).length > 0 ) {
+                $('.activity-item .rtmedia-activity-container .rtmedia-list-item > a').siblings( 'p' ).children( 'a' ).addClass( 'no-popup' );
+            }
+           
             rtMagnificPopup = jQuery(selector).magnificPopup({
                 delegate: 'a:not(".no-popup")',
                 type: 'ajax',
@@ -627,3 +631,11 @@ window.onload=function(){
         rtm_masonry_reload( rtm_masonry_container );
     }
 };
+
+// Get query string parameters from url
+function rtmediaGetParameterByName(name) {
+    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
