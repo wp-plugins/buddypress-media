@@ -62,7 +62,7 @@ function rtmedia_title() {
 function rtmedia_album_name() {
     global $rtmedia_media;
     if($rtmedia_media->album_id) {
-        if(rtmedia_type($rtmedia_media->album_id) == 'album') {
+        if( rtmedia_type($rtmedia_media->album_id) == 'album' ) {
             return get_rtmedia_title( $rtmedia_media->album_id );
         } else {
             return false;
@@ -230,8 +230,12 @@ function rtmedia_type( $id = false ) {
 	if ( $id ){
 		$model = new RTMediaModel();
 		$media = $model->get_media( array( 'id' => $id ), 0, 1 );
+		if( isset( $media[ 0 ] ) && isset( $media[ 0 ]->media_type ) ){
+			return $media[ 0 ]->media_type;
+		} else {
+			return false;
+		}
 
-		return $media[ 0 ]->media_type;
 	} else {
 		global $rtmedia_media;
 
@@ -363,7 +367,12 @@ function rtmedia_image( $size = 'rt_media_thumbnail', $id = false, $recho = true
 
 	if ( ! $thumbnail_id ){
 		global $rtmedia;
-		if ( isset ( $rtmedia->allowed_types[ $media_object->media_type ] ) && isset ( $rtmedia->allowed_types[ $media_object->media_type ][ 'thumbnail' ] ) ){
+		// Getting the extension of the uploaded file
+		$extension = rtmedia_get_extension();
+		// Checking if custom thumbnail for this file extension is set or not
+		if ( isset ( $rtmedia->allowed_types[ $media_object->media_type ] )  && isset ( $rtmedia->allowed_types[ $media_object->media_type ][ 'ext_thumb' ] ) && isset ( $rtmedia->allowed_types[ $media_object->media_type ][ 'ext_thumb' ][ $extension ] ) ){
+			$src = $rtmedia->allowed_types[ $media_object->media_type ][ 'ext_thumb' ][ $extension ];
+		} else if ( isset ( $rtmedia->allowed_types[ $media_object->media_type ] ) && isset ( $rtmedia->allowed_types[ $media_object->media_type ][ 'thumbnail' ] ) ){
 			$src = $rtmedia->allowed_types[ $media_object->media_type ][ 'thumbnail' ];
 		} elseif ( $media_object->media_type == 'album' ) {
 			$src = rtmedia_album_image( $size, $id );
@@ -372,7 +381,6 @@ function rtmedia_image( $size = 'rt_media_thumbnail', $id = false, $recho = true
 		}
 	} else {
 		if ( is_numeric( $thumbnail_id ) && $thumbnail_id != "0" ){
-
 			list( $src, $width, $height ) = wp_get_attachment_image_src( $thumbnail_id, $size );
 		} else {
 			$src = $thumbnail_id;
@@ -736,6 +744,7 @@ function rtmedia_comments( $echo = true ) {
 }
 
 function rmedia_single_comment( $comment ) {
+        global $allowedtags;
 	$html = "";
 	$html .= '<li class="rtmedia-comment">';
 	if ( $comment[ 'user_id' ] ){
@@ -751,11 +760,12 @@ function rmedia_single_comment( $comment ) {
 	}
 	$html .= "<div><div class='rtmedia-comment-details'>";
 	$html .= '<span class ="rtmedia-comment-author">' . '' . $user_name . '</span>';
+        
+        $comment_string = wp_kses($comment[ 'comment_content' ], $allowedtags);
+	$html .= '<div class="rtmedia-comment-content">' . wpautop( make_clickable( $comment_string ) ) . '</div>';
 
-	$html .= '<div class="rtmedia-comment-content">' . wpautop( make_clickable( $comment[ 'comment_content' ] ) ) . '</div>';
-
-	global $rtmedia_media;
-	if ( isset( $comment[ 'user_id' ] ) && isset( $rtmedia_media->media_author ) && ( is_rt_admin() || ( get_current_user_id() == $comment[ 'user_id' ] || $rtmedia_media->media_author == get_current_user_id() ) ) ){ // show delete button for comment author and admins
+	global $rtmedia_media;        
+        if ( is_rt_admin() || ( isset( $comment[ 'user_id' ] ) && ( get_current_user_id() == $comment[ 'user_id' ] || $rtmedia_media->media_author == get_current_user_id() ) ) ){ // show delete button for comment author and admins
 		$html .= '<i data-id="' . $comment[ 'comment_ID' ] . '" class = "rtmedia-delete-comment rtmicon-times" title="' . __( 'Delete Comment' ) . '"></i>';
 	}
 
@@ -2654,4 +2664,74 @@ function rtm_is_buddypress_enable( $flag ){
 		return $flag;
 	}
 	return false;
+}
+
+/*
+ * Function for getting extension from media id
+ */
+function rtmedia_get_extension( $media_id = false ) {
+    // If media_id is false then use global media_id
+    if( ! $media_id ) {
+        global $rtmedia_media;
+        if( isset( $rtmedia_media->media_id ) ){
+			$media_id = $rtmedia_media->media_id;
+		} else {
+			return false;
+		}
+    }
+    
+    // Getting filename from media id
+    $filename = basename( wp_get_attachment_url( $media_id ) );
+    
+    // Checking file type of uploaded document
+    $file_type = wp_check_filetype($filename);
+    
+    // return the extension of the filename
+    return $file_type[ 'ext' ];
+}
+
+/*
+ *  Function for no-popup class for rtmedia media gallery
+ */
+function rtmedia_add_no_popup_class( $class = '' ) {
+    return $class .= ' no-popup';
+}
+
+// remove all the shortcode related hooks that we had added in RTMediaQuery.php file after gallery is loaded.
+add_action( 'rtmedia_after_media_gallery', 'rtmedia_remove_media_query_hooks_after_gallery' );
+
+function rtmedia_remove_media_query_hooks_after_gallery() {
+    remove_filter( 'rtmedia_gallery_list_item_a_class', 'rtmedia_add_no_popup_class', 10, 1 );
+	remove_filter( 'rtmedia_media_gallery_show_media_title', 'rtmedia_gallery_do_not_show_media_title', 10, 1 );
+}
+
+// this function is used in RTMediaQuery.php file for show title filter
+function rtmedia_gallery_do_not_show_media_title( $flag ){
+	return false;
+}
+
+// we need to use show title filter when there is a request for template from rtMedia.backbone.js
+add_filter( 'rtmedia_media_gallery_show_media_title', 'rtmedia_media_gallery_show_title_template_request', 10, 1 );
+
+function rtmedia_media_gallery_show_title_template_request( $flag ){
+	if( isset( $_REQUEST['media_title'] ) && $_REQUEST['media_title'] == 'false' ){
+		return false;
+	}
+	return $flag;
+}
+
+// we need to use lightbox filter when there is a request for template from rtMedia.backbone.js
+add_filter( 'rtmedia_gallery_list_item_a_class', 'rtmedia_media_gallery_lightbox_template_request', 10, 1 );
+
+function rtmedia_media_gallery_lightbox_template_request( $class ){
+	if( isset( $_REQUEST['lightbox'] ) && $_REQUEST['lightbox'] == 'false' ){
+		return $class .= ' no-popup';
+	}
+	return $class;
+}
+
+// Function to get permalink for current blog
+function rtmedia_get_current_blog_url( $domain ) {
+    $domain = get_home_url(get_current_blog_id() );
+    return $domain;
 }
