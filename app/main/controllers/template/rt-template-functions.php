@@ -2287,13 +2287,6 @@ function rtmedia_admin_premium_page( $page ) {
 					<p><?php _e( 'Without leaving your WordPress dashboard, you can contact us for help using a support form.', 'rtmedia' ); ?></p>
 				</div>
 			</div>
-			<div class="row">
-				<div class="columns large-1 rtm-premium-icon-pro"><i class="rtmicon-code rtmicon-3x rtmicon-fw"></i></div>
-				<div class="columns large-10">
-					<h2><?php _e( 'Premium & Open-Source', 'rtmedia' ); ?></h2>
-					<p><?php echo __( "Developers get full control over rtMedia-PRO's source. They'll get access to " ) . "<a href='http://git.rtcamp.com/' target='_blank'>git.rtcamp.com</a>"; ?></p>
-				</div>
-			</div>
 			</br>
 			<div class="row">
 				<div class="columns large-12 rtmedia-upgrade">
@@ -2734,4 +2727,25 @@ function rtmedia_media_gallery_lightbox_template_request( $class ){
 function rtmedia_get_current_blog_url( $domain ) {
     $domain = get_home_url(get_current_blog_id() );
     return $domain;
+}
+
+//Removing special characters and replacing accent characters with ASCII characters in filename before upload to server
+add_action( 'rtmedia_upload_set_post_object', 'rtmedia_upload_sanitize_filename_before_upload', 10 );
+
+function rtmedia_upload_sanitize_filename_before_upload() {
+    add_action( 'sanitize_file_name', 'sanitize_filename_before_upload', 10, 1 );
+}
+
+function sanitize_filename_before_upload( $filename ) {
+    $info = pathinfo( $filename );
+    $ext  = empty( $info[ 'extension' ] ) ? '' : '.' . $info[ 'extension' ];
+    $name = basename( $filename, $ext );
+    $finalFileName = $name;
+
+    $special_chars = array( "?", "[", "]", "/", "\\", "=", "<", ">", ":", ";", ",", "'", "\"", "&", "$", "#", "*", "(", ")", "|", "~", "`", "!", "{", "}", chr( 0 ) );
+    $special_chars = apply_filters( 'sanitize_file_name_chars', $special_chars, $finalFileName );
+    $string = str_replace( $special_chars, '-', $finalFileName );
+    $string = preg_replace( '/\+/', '', $string );
+
+    return remove_accents( $string ) . $ext;
 }
