@@ -2,8 +2,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: BuddyPress Media\n"
 "Report-Msgid-Bugs-To: \n"
+<<<<<<< HEAD
+"POT-Creation-Date: 2014-09-30 01:32+0530\n"
+"PO-Revision-Date: 2014-09-30 01:33+0530\n"
+=======
 "POT-Creation-Date: 2014-10-20 15:39+0530\n"
 "PO-Revision-Date: 2014-10-20 15:39+0530\n"
+>>>>>>> master
 "Last-Translator: faishal <faishal.saiyed@rtcamp.com>\n"
 "Language-Team: rtCamp <info@rtcamp.com>\n"
 "Language: en_IN\n"
@@ -55,7 +60,11 @@ msgstr ""
 msgid "Media"
 msgstr ""
 
+<<<<<<< HEAD
+#: app/main/RTMedia.php:554 app/main/controllers/template/RTMediaNav.php:151
+=======
 #: app/main/RTMedia.php:554 app/main/controllers/template/RTMediaNav.php:155
+>>>>>>> master
 #: app/main/controllers/template/rt-template-functions.php:82
 msgid "All"
 msgstr ""
@@ -68,7 +77,11 @@ msgstr ""
 msgid "Album"
 msgstr ""
 
+<<<<<<< HEAD
+#: app/main/RTMedia.php:566 app/main/controllers/template/RTMediaNav.php:172
+=======
 #: app/main/RTMedia.php:566 app/main/controllers/template/RTMediaNav.php:176
+>>>>>>> master
 #: app/main/controllers/media/RTMediaAlbum.php:53
 #: app/main/controllers/media/RTMediaAlbum.php:65
 msgid "Albums"
@@ -1056,16 +1069,20 @@ msgstr ""
 msgid "Unset Featured"
 msgstr ""
 
-#: app/main/controllers/media/RTMediaLike.php:17
+#: app/main/controllers/media/RTMediaLike.php:16
 msgid "Like"
 msgstr ""
 
+<<<<<<< HEAD
+#: app/main/controllers/media/RTMediaLike.php:16
+=======
 #: app/main/controllers/media/RTMediaLike.php:18
+>>>>>>> master
 #: app/admin/RTMediaAdmin.php:423
 msgid "Likes"
 msgstr ""
 
-#: app/main/controllers/media/RTMediaLike.php:19
+#: app/main/controllers/media/RTMediaLike.php:16
 msgid "Unlike"
 msgstr ""
 
@@ -1419,7 +1436,7 @@ msgid ""
 "developer/json-api/\">here</a>"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:609 app/helper/RTMediaSettings.php:285
+#: app/admin/RTMediaFormHandler.php:609 app/helper/RTMediaSettings.php:277
 msgid "Media Type"
 msgstr ""
 
@@ -1470,102 +1487,102 @@ msgstr ""
 #: app/admin/RTMediaFormHandler.php:760
 msgid ""
 " If you choose more than 1 thumbnail, your users will be able to change "
-"thumbnail by going to video \"edit\" section."
+"thumbnail by going to video 'edit' section. Maximum value is 10."
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:804
+#: app/admin/RTMediaFormHandler.php:805
 msgid ""
 "If you want to add some custom CSS code to the plugin and don't want to "
 "modify any files, then it's a good place to enter your code at this field."
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:833
+#: app/admin/RTMediaFormHandler.php:834
 msgid "rtMedia default styles"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:839
+#: app/admin/RTMediaFormHandler.php:840
 msgid ""
 "Load default rtMedia styles. You need to write your own style for rtMedia if "
 "you disable it."
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:843
+#: app/admin/RTMediaFormHandler.php:844
 msgid "Paste your CSS code"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:849
+#: app/admin/RTMediaFormHandler.php:850
 msgid "Custom rtMedia CSS container"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:869
+#: app/admin/RTMediaFormHandler.php:870
 msgid "Enable privacy"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:875
+#: app/admin/RTMediaFormHandler.php:876
 msgid "Enable privacy in rtMedia"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:879
+#: app/admin/RTMediaFormHandler.php:880
 msgid "Default privacy"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:885
+#: app/admin/RTMediaFormHandler.php:886
 msgid "Set default privacy for media"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:889
+#: app/admin/RTMediaFormHandler.php:890
 msgid "Allow users to set privacy for their content"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:894
+#: app/admin/RTMediaFormHandler.php:895
 msgid ""
 "If you choose this, user will be able to change privacy of their own uploads."
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:896
+#: app/admin/RTMediaFormHandler.php:897
 msgid "For group uploads, BuddyPress groups privacy is used."
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:965
+#: app/admin/RTMediaFormHandler.php:966
 msgid "Enable media in profile"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:970
+#: app/admin/RTMediaFormHandler.php:971
 msgid "Enable Media on BuddyPress Profile"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:974
+#: app/admin/RTMediaFormHandler.php:975
 msgid "Enable media in group"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:979
+#: app/admin/RTMediaFormHandler.php:980
 msgid "Enable Media on BuddyPress Groups"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:983
+#: app/admin/RTMediaFormHandler.php:984
 msgid "Allow upload from activity stream"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:988
+#: app/admin/RTMediaFormHandler.php:989
 msgid "Allow upload using status update box present on activity stream page"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:993
+#: app/admin/RTMediaFormHandler.php:994
 msgid "Number of media items to show in activity stream"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:998
+#: app/admin/RTMediaFormHandler.php:999
 msgid ""
 "With bulk uploads activity stream may get flooded. You can control maximum "
 "number of medias/files per activity. This limit will not affect the actual "
 "number of uploads. Only display. <em>0</em> means unlimited."
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:1045
+#: app/admin/RTMediaFormHandler.php:1046
 msgid "Organize media into albums"
 msgstr ""
 
-#: app/admin/RTMediaFormHandler.php:1051
+#: app/admin/RTMediaFormHandler.php:1052
 msgid ""
 "This will add 'album' tab to BuddyPress profile and group depending on "
 "^above^ settings."
@@ -1657,7 +1674,11 @@ msgstr ""
 
 #: app/admin/RTMediaAdmin.php:546 app/admin/RTMediaAdmin.php:547
 #: app/admin/RTMediaAdmin.php:638 app/admin/RTMediaAdmin.php:1141
+<<<<<<< HEAD
+#: app/helper/RTMediaSettings.php:165
+=======
 #: app/helper/RTMediaSettings.php:173
+>>>>>>> master
 msgid "Support"
 msgstr ""
 
@@ -2289,73 +2310,69 @@ msgstr ""
 msgid "Posted "
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:137
-msgid "Max Video thumbnail size is "
-msgstr ""
-
-#: app/helper/RTMediaSettings.php:171
+#: app/helper/RTMediaSettings.php:163
 msgid "BuddyPress Media Addons for Photos"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:175
+#: app/helper/RTMediaSettings.php:167
 msgid "rtMedia Themes"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:246
+#: app/helper/RTMediaSettings.php:238
 #, php-format
 msgid ""
 "Currently your network allows uploading of the following file types. You can "
 "change the settings <a href=\"%s\">here</a>.<br /><code>%s</code></span>"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:262 app/helper/RTMediaSettings.php:264
+#: app/helper/RTMediaSettings.php:254 app/helper/RTMediaSettings.php:256
 msgid "Recounting of media files done successfully"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:264
+#: app/helper/RTMediaSettings.php:256
 msgid "Recount Success"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:268 app/helper/RTMediaSettings.php:270
+#: app/helper/RTMediaSettings.php:260 app/helper/RTMediaSettings.php:262
 msgid "Recounting Failed"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:270
+#: app/helper/RTMediaSettings.php:262
 msgid "Recount Fail"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:283 app/helper/RTMediaSettings.php:285
+#: app/helper/RTMediaSettings.php:275 app/helper/RTMediaSettings.php:277
 msgid "Atleast one Media Type Must be selected"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:294 app/helper/RTMediaSettings.php:296
+#: app/helper/RTMediaSettings.php:286 app/helper/RTMediaSettings.php:288
 msgid "\"Number of media\" count value should be numeric and greater than 0."
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:296
+#: app/helper/RTMediaSettings.php:288
 msgid "Default Count"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:301
+#: app/helper/RTMediaSettings.php:293
 msgid "Settings saved."
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:322
+#: app/helper/RTMediaSettings.php:314
 #, php-format
 msgid ""
 "If you make changes to width, height or crop settings, you must use \"<a "
 "href=\"%s\">Regenerate Thumbnail Plugin</a>\" to regenerate old images.\""
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:343
+#: app/helper/RTMediaSettings.php:335
 msgid "BuddyPress Media 2.6 requires a database upgrade. "
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:344
+#: app/helper/RTMediaSettings.php:336
 msgid "Update Database"
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:359 app/helper/RTMediaSupport.php:465
+#: app/helper/RTMediaSettings.php:351 app/helper/RTMediaSupport.php:465
 msgid ""
 "If your site has some issues due to BuddyPress Media and you want one on one "
 "support then you can create a support topic on the <a target=\"_blank\" href="
@@ -2364,7 +2381,7 @@ msgid ""
 "\">rtCamp Support Forum</a>."
 msgstr ""
 
-#: app/helper/RTMediaSettings.php:360 app/helper/RTMediaSupport.php:466
+#: app/helper/RTMediaSettings.php:352 app/helper/RTMediaSupport.php:466
 msgid ""
 "If you have any suggestions, enhancements or bug reports, then you can open "
 "a new issue on <a target=\"_blank\" href=\"https://github.com/rtCamp/"
