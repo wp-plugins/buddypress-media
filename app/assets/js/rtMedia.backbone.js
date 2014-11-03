@@ -221,7 +221,7 @@ jQuery( function ( $ ) {
                 $( that.el ).siblings( '.rtmedia_next_prev' ).children( '#rtMedia-galary-next' ).show();
                 //$("#rtMedia-galary-next").show();
             }
-            if( typeof rtmedia_masonry_layout != "undefined" && rtmedia_masonry_layout == "true" ) {
+            if( typeof rtmedia_masonry_layout != "undefined" && rtmedia_masonry_layout == "true" && jQuery( '.rtmedia-container .rtmedia-list.rtm-no-masonry' ).length == 0 ) {
                     rtm_masonry_reload( rtm_masonry_container );
             }
         },
@@ -351,6 +351,7 @@ jQuery( function ( $ ) {
                 }
             }
             jQuery( '.start-media-upload' ).hide();
+            window.onbeforeunload = null;
         } );
 
         uploaderObj.uploader.bind( 'FilesAdded', function ( up, files ) {
@@ -528,6 +529,11 @@ jQuery( function ( $ ) {
             if ( file.percent == 100 ) {
                 $( "#" + file.id ).toggleClass( 'upload-success' );
             }
+            
+            window.onbeforeunload = function (evt) {                
+                 var message = rtmedia_upload_progress_error_message;
+                 return message;                
+            };
         } );
         uploaderObj.uploader.bind( 'BeforeUpload', function ( up, file ) {            
             up.settings.multipart_params.title = file.title.split( '.' )[ 0 ];
@@ -900,6 +906,7 @@ jQuery( document ).ready( function ( $ ) {
         $( "#rtMedia-queue-list tr" ).remove();
         $( "#rtm-upload-start-notice" ).hide();
         //$("#aw-whats-new-submit").removeAttr('disabled');
+        window.onbeforeunload = null;
     } );
     objUploadView.uploader.bind( 'UploadProgress', function ( up, file ) {
         $( "#" + file.id + " .plupload_file_status" ).html( rtmedia_uploading_msg + '( ' + file.percent + '% )' );
@@ -908,6 +915,10 @@ jQuery( document ).ready( function ( $ ) {
             $( "#" + file.id ).toggleClass( 'upload-success' );
         }
 
+        window.onbeforeunload = function (evt) {                
+            var message = rtmedia_upload_progress_error_message;
+            return message;                
+        };
     } );
 
     $( "#rtMedia-start-upload" ).hide();
@@ -940,7 +951,7 @@ jQuery( document ).ready( function ( $ ) {
             options.beforeSend = function () {
                 if ( originalOptions.data.action == 'post_update' ) {
                     if ( $.trim( $( "#whats-new" ).val() ) == "" ) {
-                        alert( rtmedia_empty_activity_msg );
+                        $('#whats-new-form' ).prepend( '<div id="message" class="error"><p>' + rtmedia_empty_activity_msg + '</p></div>' );
                         $("#aw-whats-new-submit").prop("disabled", true).removeClass('loading');
                         return false;
                     }
