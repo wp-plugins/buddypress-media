@@ -58,7 +58,8 @@ jQuery( function ( $ ) {
             "guid": false,
             "width": 0,
             "height": 0,
-            "rt_permalink": false
+            "rt_permalink": false,
+            "duration": "0:00"
             //			"next"			: -1,
             //			"prev"			: -1
         }
@@ -1106,7 +1107,7 @@ jQuery( document ).ready( function ( $ ) {
 
 
     } );
-    $( document ).on( "click", '.rtmedia-featured', function ( e ) {
+    $( document ).on( "click", '.rtmedia-featured, .rtmedia-group-featured', function ( e ) {
         e.preventDefault();
         var that = this;
         $( this ).attr( 'disabled', 'disabled' );
