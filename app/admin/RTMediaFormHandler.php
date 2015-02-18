@@ -799,29 +799,64 @@ class RTMediaFormHandler {
 
 		echo '</div>';
 		$options = $rtmedia->options;
-		$render_video_thumb = array(
-			'title' => __( 'Number of thumbnails to generate on video upload', 'rtmedia' ),
+        
+        // Checking if user has subscribed any plan for encoding
+        $rtmedia_encoding_api_key = get_rtmedia_encoding_api_key();
+        
+        if( isset( $rtmedia_encoding_api_key ) && $rtmedia_encoding_api_key != '' && $rtmedia_encoding_api_key ) {
+            $render_video_thumb = array(
+                'title' => __( 'Number of thumbnails to generate on video upload', 'rtmedia' ),
+                'callback' => array( 'RTMediaFormHandler', 'number' ),
+                'args' => array(
+                    'key' => 'general_videothumbs',
+                    'value' => $options['general_videothumbs'],
+                    'class' => array( 'rtmedia-setting-text-box' ),
+                    'desc' => __( ' If you choose more than 1 thumbnail, your users will be able to change the thumbnail by going to video \'edit\' section. Maximum value is 10.', 'rtmedia' ),
+                    'min' => 1,
+                    'max' => 10,
+                )
+            );
+            ?>
+            <div class="postbox metabox-holder">
+                <h3 class="hndle"><span>Encoding Settings</span></h3>
+            </div>
+            <div class="row section">
+                <div class="columns large-9">
+                    <?php echo $render_video_thumb['title']; ?>
+                </div>
+                <div class="columns large-3">
+                    <?php call_user_func( $render_video_thumb['callback'], $render_video_thumb['args'] ); ?>
+                    <span data-tooltip class="has-tip" title="<?php echo ( isset( $render_video_thumb['args']['desc'] ) ) ? $render_video_thumb['args']['desc'] : 'NA'; ?>">
+                        <i class="rtmicon-info-circle"></i>
+                    </span>
+                </div>
+            </div>
+            <?php
+        }
+        
+        $render_jpeg_image_quality = array(
+			'title' => __( 'JPEG/JPG image quality (1-100)', 'rtmedia' ),
 			'callback' => array( 'RTMediaFormHandler', 'number' ),
 			'args' => array(
-				'key' => 'general_videothumbs',
-				'value' => $options['general_videothumbs'],
+				'key' => 'general_jpeg_image_quality',
+				'value' => $options['general_jpeg_image_quality'],
 				'class' => array( 'rtmedia-setting-text-box' ),
-				'desc' => __( ' If you choose more than 1 thumbnail, your users will be able to change the thumbnail by going to video \'edit\' section. Maximum value is 10.', 'rtmedia' ),
+				'desc' => __( 'Enter JPEG/JPG Image Quality. Minimum value is 1. 100 is original quality.', 'rtmedia' ),
 				'min' => 1,
-				'max' => 10,
+				'max' => 100,
 			)
 		);
-		?>
-		<div class="postbox metabox-holder">
-			<h3 class="hndle"><span>Encoding Settings</span></h3>
+        ?>
+        <div class="postbox metabox-holder">
+			<h3 class="hndle"><span>Image Quality</span></h3>
 		</div>
-		<div class="row section">
+        <div class="row section">
 			<div class="columns large-9">
-				<?php echo $render_video_thumb['title']; ?>
+				<?php echo $render_jpeg_image_quality['title']; ?>
 			</div>
 			<div class="columns large-3">
-				<?php call_user_func( $render_video_thumb['callback'], $render_video_thumb['args'] ); ?>
-				<span data-tooltip class="has-tip" title="<?php echo ( isset( $render_video_thumb['args']['desc'] ) ) ? $render_video_thumb['args']['desc'] : 'NA'; ?>">
+				<?php call_user_func( $render_jpeg_image_quality['callback'], $render_jpeg_image_quality['args'] ); ?>
+				<span data-tooltip class="has-tip" title="<?php echo ( isset( $render_jpeg_image_quality['args']['desc'] ) ) ? $render_jpeg_image_quality['args']['desc'] : 'NA'; ?>">
 					<i class="rtmicon-info-circle"></i>
 				</span>
 			</div>
