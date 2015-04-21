@@ -79,7 +79,7 @@ function get_rtmedia_gallery_title() {
         $title = get_rtmedia_title( $id );
     } elseif( isset( $rtmedia_query->media_query[ 'media_type' ] ) && ! is_array( $rtmedia_query->media_query[ 'media_type' ] ) && $rtmedia_query->media_query[ 'media_type' ] != "" ){
         $current_media_type = $rtmedia_query->media_query[ 'media_type' ];
-        if( $current_media_type != "" && is_array( $rtmedia->allowed_types ) && is_array( $rtmedia->allowed_types[ $current_media_type ] ) && isset( $rtmedia->allowed_types[ $current_media_type ][ 'plural_label' ] ) ) {
+        if( $current_media_type != "" && is_array( $rtmedia->allowed_types ) && isset( $rtmedia->allowed_types[ $current_media_type ] ) && is_array( $rtmedia->allowed_types[ $current_media_type ] ) && isset( $rtmedia->allowed_types[ $current_media_type ][ 'plural_label' ] ) ) {
             $title = sprintf( '%s %s', __( 'All', 'rtmedia' ), $rtmedia->allowed_types[ $current_media_type ][ 'plural_label' ] );
         }
     }
@@ -1756,7 +1756,7 @@ function rtmedia_create_album( $options ) {
 	if ( $display === true ){
 
 		add_action( 'rtmedia_before_media_gallery', 'rtmedia_create_album_modal' );
-		$options[ ] = "<a href='#rtmedia-create-album-modal' class='rtmedia-reveal-modal rtmedia-modal-link'  title='" . __( 'Create New Album', 'rtmedia' ) . "'><i class='rtmicon-plus-circle rtmicon-fw'></i>" . __( 'Add Album', 'rtmedia' ) . "</a>";
+		$options[ ] = "<a href='#rtmedia-create-album-modal' class='rtmedia-reveal-modal rtmedia-modal-link'  title='" . __( 'Create an Album', 'rtmedia' ) . "'><i class='rtmicon-plus-circle rtmicon-fw'></i>" . __( 'Add Album', 'rtmedia' ) . "</a>";
 
 		return $options;
 
@@ -1772,7 +1772,7 @@ function rtmedia_create_album_modal() {
 		<div class="mfp-hide rtmedia-popup" id="rtmedia-create-album-modal">
 			<div id="rtm-modal-container">
 				<?php do_action( "rtmedia_before_create_album_modal" ); ?>
-				<h2 class="rtm-modal-title"><?php _e( 'Create New Album', 'rtmedia' ); ?></h2>
+				<h2 class="rtm-modal-title"><?php _e( 'Create an Album', 'rtmedia' ); ?></h2>
 				<p>
 					<label class="rtm-modal-grid-title-column" for="rtmedia_album_name"><?php _e( 'Album Title : ', 'rtmedia' ); ?></label>
 					<input type="text" id="rtmedia_album_name" value="" class="rtm-input-medium"/>
@@ -2205,7 +2205,7 @@ function rtmedia_admin_premium_tab( $tabs ) {
 		$tabs = array();
 	}
 	$tabs[ ] = array(
-		'href' => get_admin_url( null, add_query_arg( array( 'page' => 'rtmedia-premium' ), 'admin.php' ) ), 'name' => __( 'Go PRO!', 'rtmedia' ), 'slug' => 'rtmedia-premium', 'class' => array( 'rtm-premium' )
+		'href' => get_admin_url( null, esc_url( add_query_arg( array( 'page' => 'rtmedia-premium' ), 'admin.php' ) ) ), 'name' => __( 'Go PRO!', 'rtmedia' ), 'slug' => 'rtmedia-premium', 'class' => array( 'rtm-premium' )
 	);
 
 	return $tabs;
