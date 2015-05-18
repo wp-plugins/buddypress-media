@@ -39,7 +39,8 @@ class RTMediaEncoding {
 					if ( isset( $usage_info[ $this->api_key ]->remaining ) && $usage_info[ $this->api_key ]->remaining > 0 ) {
 						if ( $usage_info[ $this->api_key ]->remaining < 524288000 && ! get_site_option( 'rtmedia-encoding-usage-limit-mail' ) ){
 							$this->nearing_usage_limit( $usage_info );
-						} elseif ( $usage_info[ $this->api_key ]->remaining > 524288000 && get_site_option( 'rtmedia-encoding-usage-limit-mail' ) ){
+						}
+						elseif ( $usage_info[ $this->api_key ]->remaining > 524288000 && get_site_option( 'rtmedia-encoding-usage-limit-mail' ) ){
 							update_site_option( 'rtmedia-encoding-usage-limit-mail', 0 );
 						}
 						if ( ! class_exists( 'RTMediaFFMPEG' ) && ! class_exists( 'RTMediaKaltura' ) ){
@@ -74,7 +75,7 @@ class RTMediaEncoding {
 	 * @param string $autoformat thumbnails for genrating thumbs only
 	 */
 	function encoding( $media_ids, $file_object, $uploaded, $autoformat = true ) {
-		foreach( $file_object as $key => $single ) {
+		foreach ( $file_object as $key => $single ) {
 			$type_arry = explode( ".", $single[ 'url' ] );
 			$type = strtolower( $type_arry[ sizeof( $type_arry ) - 1 ] );
 			$not_allowed_type = array( "mp3" );
@@ -84,11 +85,17 @@ class RTMediaEncoding {
 				if ( $options_vedio_thumb == "" )
 					$options_vedio_thumb = 3;
 
-				/**  fORMAT **/
+				/**  fORMAT * */
 				if ( $single[ 'type' ] == 'video/mp4' || $type == "mp4" )
 					$autoformat = "thumbnails";
 
-				$query_args = array( 'url' => urlencode( $single[ 'url' ] ), 'callbackurl' => urlencode( trailingslashit( home_url() ) . "index.php" ), 'force' => 0, 'size' => filesize( $single[ 'file' ] ), 'formats' => ( $autoformat === true ) ? ( ( $type_array[ 0 ] == 'video' ) ? 'mp4' : 'mp3' ) : $autoformat, 'thumbs' => $options_vedio_thumb, 'rt_id' => $media_ids[ $key ] );
+				$query_args = array( 'url' => urlencode( $single[ 'url' ] ),
+					'callbackurl' => urlencode( trailingslashit( home_url() ) . "index.php" ),
+					'force' => 0,
+					'size' => filesize( $single[ 'file' ] ),
+					'formats' => ($autoformat === true) ? (($type_array[ 0 ] == 'video') ? 'mp4' : 'mp3') : $autoformat,
+					'thumbs' => $options_vedio_thumb,
+					'rt_id' => $media_ids[ $key ] );
 				$encoding_url = $this->api_url . 'job/new/';
 				$upload_url = esc_url( add_query_arg( $query_args, $encoding_url . $this->api_key ) );
 				//error_log(var_export($upload_url, true));
@@ -96,7 +103,7 @@ class RTMediaEncoding {
 				$upload_page = wp_remote_get( $upload_url, array( 'timeout' => 200 ) );
 
 				//error_log(var_export($upload_page, true));
-				if ( ! is_wp_error( $upload_page ) && ( ! isset( $upload_page[ 'headers' ][ 'status' ] ) || ( isset( $upload_page[ 'headers' ][ 'status' ] ) && ( $upload_page[ 'headers' ][ 'status' ] == 200 ) ) ) ) {
+				if ( ! is_wp_error( $upload_page ) && ( ! isset( $upload_page[ 'headers' ][ 'status' ] ) || (isset( $upload_page[ 'headers' ][ 'status' ] ) && ($upload_page[ 'headers' ][ 'status' ] == 200))) ) {
 					$upload_info = json_decode( $upload_page[ 'body' ] );
 					if ( isset( $upload_info->status ) && $upload_info->status && isset( $upload_info->job_id ) && $upload_info->job_id ) {
 						$job_id = $upload_info->job_id;
@@ -138,7 +145,8 @@ class RTMediaEncoding {
 		$usage_url = trailingslashit( $this->api_url ) . 'api/usage/' . $key;
 		$usage_page = wp_remote_get( $usage_url, array( 'timeout' => 20 ) );
 		if ( ! is_wp_error( $usage_page ) )
-			$usage_info = json_decode( $usage_page[ 'body' ] ); else
+			$usage_info = json_decode( $usage_page[ 'body' ] );
+		else
 			$usage_info = NULL;
 		update_site_option( 'rtmedia-encoding-usage', array( $key => $usage_info ) );
 		return $usage_info;
@@ -149,8 +157,8 @@ class RTMediaEncoding {
 		$message = __( '<p>You are nearing the quota limit for your rtMedia encoding service.</p><p>Following are the details:</p><p><strong>Used:</strong> %s</p><p><strong>Remaining</strong>: %s</p><p><strong>Total:</strong> %s</p>', 'rtmedia' );
 		$users = get_users( array( 'role' => 'administrator' ) );
 		if ( $users ) {
-			foreach( $users as $user )
-				$admin_email_ids[ ] = $user->user_email;
+			foreach ( $users as $user )
+				$admin_email_ids[] = $user->user_email;
 			add_filter( 'wp_mail_content_type', create_function( '', 'return "text/html";' ) );
 			wp_mail( $admin_email_ids, $subject, sprintf( $message, size_format( $usage_details[ $this->api_key ]->used, 2 ), size_format( $usage_details[ $this->api_key ]->remaining, 2 ), size_format( $usage_details[ $this->api_key ]->total, 2 ) ) );
 		}
@@ -164,8 +172,8 @@ class RTMediaEncoding {
 			$message = __( '<p>Your usage quota is over. Upgrade your plan</p><p>Following are the details:</p><p><strong>Used:</strong> %s</p><p><strong>Remaining</strong>: %s</p><p><strong>Total:</strong> %s</p>', 'rtmedia' );
 			$users = get_users( array( 'role' => 'administrator' ) );
 			if ( $users ) {
-				foreach( $users as $user )
-					$admin_email_ids[ ] = $user->user_email;
+				foreach ( $users as $user )
+					$admin_email_ids[] = $user->user_email;
 				add_filter( 'wp_mail_content_type', create_function( '', 'return "text/html";' ) );
 				wp_mail( $admin_email_ids, $subject, sprintf( $message, size_format( $usage_details[ $this->api_key ]->used, 2 ), 0, size_format( $usage_details[ $this->api_key ]->total, 2 ) ) );
 			}
@@ -222,18 +230,18 @@ class RTMediaEncoding {
 	public function successfully_subscribed_notice() {
 		?>
 		<div class="updated">
-		<p><?php printf( __( 'You have successfully subscribed for the <strong>%s</strong> plan', 'rtmedia' ), $_GET[ 'api_key_updated' ] ); ?></p>
+			<p><?php printf( __( 'You have successfully subscribed for the <strong>%s</strong> plan', 'rtmedia' ), $_GET[ 'api_key_updated' ] ); ?></p>
 		</div><?php
 	}
 
 	public function encoding_subscription_form( $name = 'No Name', $price = '0', $force = false ) {
 		if ( $this->api_key )
 			$this->update_usage( $this->api_key );
-		$action = $this->sandbox_testing ? 'https://sandbox.paypal.com/cgi-bin/webscr' : 'https://www.paypal.com/cgi-bin/webscr';
+		$action = $this->sandbox_testing ? 'https://sandbox.paypal.com/cgi-bin/webscr' : 'https://www.paypal.com/cgi-bin/webscr';		
 		$return_page = esc_url( add_query_arg( array( 'page' => 'rtmedia-addons' ), ( is_multisite() ? network_admin_url( 'admin.php' ) : admin_url( 'admin.php' ) ) ) );
 
 		$usage_details = get_site_option( 'rtmedia-encoding-usage' );
-		if ( isset( $usage_details[ $this->api_key ]->plan->name ) && ( strtolower( $usage_details[ $this->api_key ]->plan->name ) == strtolower( $name ) ) && $usage_details[ $this->api_key ]->sub_status && ! $force ) {
+		if ( isset( $usage_details[ $this->api_key ]->plan->name ) && (strtolower( $usage_details[ $this->api_key ]->plan->name ) == strtolower( $name )) && $usage_details[ $this->api_key ]->sub_status && ! $force ) {
 			$form = '<button data-plan="' . $name . '" data-price="' . $price . '" type="submit" class="button bpm-unsubscribe">' . __( 'Unsubscribe', 'rtmedia' ) . '</button>';
 			$form .= '<div id="bpm-unsubscribe-dialog" title="Unsubscribe">
   <p>' . __( 'Just to improve our service we would like to know the reason for you to leave us.' ) . '</p>
@@ -274,7 +282,7 @@ class RTMediaEncoding {
                         <input type="hidden" name="src" value="1">
                         <input type="hidden" name="sra" value="1">
 
-                        <input type="image" src="http://www.paypal.com/en_US/i/btn/btn_subscribe_SM.gif" border="0" name="submit" alt="Make payments with PayPal - it\'s fast, free and secure!">
+                        <input type="image" src="http://www.paypal.com/en_US/i/btn/btn_subscribe_SM.gif" name="submit" alt="Make payments with PayPal - it\'s fast, free and secure!">
                     </form>';
 		}
 		return $form;
@@ -285,11 +293,11 @@ class RTMediaEncoding {
 		$content = '';
 		if ( $usage_details && isset( $usage_details[ $this->api_key ]->status ) && $usage_details[ $this->api_key ]->status ) {
 			if ( isset( $usage_details[ $this->api_key ]->plan->name ) )
-				$content .= '<p><strong>' . __( 'Current Plan', 'rtmedia' ) . ':</strong> ' . $usage_details[ $this->api_key ]->plan->name . ( $usage_details[ $this->api_key ]->sub_status ? '' : ' (' . __( 'Unsubscribed', 'rtmedia' ) . ')' ) . '</p>';
+				$content .= '<p><strong>' . __( 'Current Plan', 'rtmedia' ) . ':</strong> ' . $usage_details[ $this->api_key ]->plan->name . ($usage_details[ $this->api_key ]->sub_status ? '' : ' (' . __( 'Unsubscribed', 'rtmedia' ) . ')') . '</p>';
 			if ( isset( $usage_details[ $this->api_key ]->used ) )
-				$content .= '<p><span class="encoding-used"></span><strong>' . __( 'Used', 'rtmedia' ) . ':</strong> ' . ( ( $used_size = size_format( $usage_details[ $this->api_key ]->used, 2 ) ) ? $used_size : '0MB' ) . '</p>';
+				$content .= '<p><span class="encoding-used"></span><strong>' . __( 'Used', 'rtmedia' ) . ':</strong> ' . (($used_size = size_format( $usage_details[ $this->api_key ]->used, 2 )) ? $used_size : '0MB') . '</p>';
 			if ( isset( $usage_details[ $this->api_key ]->remaining ) )
-				$content .= '<p><span class="encoding-remaining"></span><strong>' . __( 'Remaining', 'rtmedia' ) . ':</strong> ' . ( ( $remaining_size = size_format( $usage_details[ $this->api_key ]->remaining, 2 ) ) ? $remaining_size : '0MB' ) . '</p>';
+				$content .= '<p><span class="encoding-remaining"></span><strong>' . __( 'Remaining', 'rtmedia' ) . ':</strong> ' . (($remaining_size = size_format( $usage_details[ $this->api_key ]->remaining, 2 )) ? $remaining_size : '0MB') . '</p>';
 			if ( isset( $usage_details[ $this->api_key ]->total ) )
 				$content .= '<p><strong>' . __( 'Total', 'rtmedia' ) . ':</strong> ' . size_format( $usage_details[ $this->api_key ]->total, 2 ) . '</p>';
 			$usage = new rtProgress();
@@ -304,14 +312,19 @@ class RTMediaEncoding {
 
 	public function encoding_service_intro() {
 		?>
+
+		<h3 class="rtm-option-title"><?php _e( 'Audio/Video encoding service', 'rtmedia' ); ?></h3>
+
 		<p><?php _e( 'rtMedia team has started offering an audio/video encoding service.', 'rtmedia' ); ?></p>
+
 		<p>
 			<label for="new-api-key"><?php _e( 'Enter API KEY', 'rtmedia' ); ?></label>
-			<input id="new-api-key" type="text" name="new-api-key" value="<?php echo $this->stored_api_key; ?>" size="60"/>
-			<input type="submit" id="api-key-submit" name="api-key-submit" value="<?php echo __( 'Save key', 'rtmedia' ); ?>" class="button-primary"/>
+			<input id="new-api-key" type="text" name="new-api-key" value="<?php echo $this->stored_api_key; ?>" size="60" />
+			<input type="submit" id="api-key-submit" name="api-key-submit" value="<?php echo __( 'Save Key', 'rtmedia' ); ?>" class="button-primary" />
 		</p>
+
 		<p>
-		<?php
+			<?php
 			$enable_btn_style = 'style="display:none;"';
 			$disable_btn_style = 'style="display:none;"';
 			if ( $this->api_key ){
@@ -319,13 +332,13 @@ class RTMediaEncoding {
 			} else if( $this->stored_api_key ){
 				$disable_btn_style = 'style="display:block;"';
 			}
-		?>
+			?>
 			<input type="submit" id="disable-encoding" name="disable-encoding" value="Disable Encoding" class="button-secondary" <?php echo $enable_btn_style; ?> />
 			<input type="submit" id="enable-encoding" name="enable-encoding" value="Enable Encoding" class="button-secondary" <?php echo $disable_btn_style; ?> />
 		</p>
-		<table class="bp-media-encoding-table widefat fixed" cellspacing="0">
 
-			<!-- Results table headers -->
+		<!-- Results table headers -->
+		<table  class="bp-media-encoding-table fixed widefat rtm-encoding-table">
 			<thead>
 				<tr>
 					<th><?php _e( 'Feature\Plan', 'rtmedia' ); ?></th>
@@ -335,24 +348,16 @@ class RTMediaEncoding {
 					<th><?php _e( 'Platinum', 'rtmedia' ); ?></th>
 				</tr>
 			</thead>
+
 			<tbody>
 				<tr>
 					<th><?php _e( 'File Size Limit', 'rtmedia' ); ?></th>
-					<td>200MB (
-						<del>20MB</del>
-						)
-					</td>
-					<td colspan="3" class="column-posts">16GB (
-						<del>2GB</del>
-						)
-					</td>
+					<td>200MB (<del>20MB</del>)</td>
+					<td colspan="3" class="column-posts">16GB (<del>2GB</del>)</td>
 				</tr>
 				<tr>
 					<th><?php _e( 'Bandwidth (monthly)', 'rtmedia' ); ?></th>
-					<td>10GB (
-						<del>1GB</del>
-						)
-					</td>
+					<td>10GB (<del>1GB</del>)</td>
 					<td>100GB</td>
 					<td>1TB</td>
 					<td>10TB</td>
@@ -386,17 +391,16 @@ class RTMediaEncoding {
 					<td><?php _e( '$999/month', 'rtmedia' ); ?></td>
 				</tr>
 				<tr>
-					<th></th>
+					<th>&nbsp;</th>
 					<td><?php
 						$usage_details = get_site_option( 'rtmedia-encoding-usage' );
-						if ( isset( $usage_details[ $this->api_key ]->plan->name ) && ( strtolower( $usage_details[ $this->api_key ]->plan->name ) == 'free' ) ) {
+						if ( isset( $usage_details[ $this->api_key ]->plan->name ) && (strtolower( $usage_details[ $this->api_key ]->plan->name ) == 'free') ) {
 							echo '<button disabled="disabled" type="submit" class="encoding-try-now button button-primary">' . __( 'Current Plan', 'rtmedia' ) . '</button>';
 						} else {
 							?>
-							<form id="encoding-try-now-form" method="get" action="">
-							<button type="submit" class="encoding-try-now button button-primary"><?php _e( 'Try Now', 'rtmedia' ); ?></button>
-							</form><?php
-						}
+							<form id="encoding-try-now-form" method="get">
+								<button type="submit" class="encoding-try-now button button-primary"><?php _e( 'Try Now', 'rtmedia' ); ?></button>
+							</form><?php }
 						?>
 					</td>
 					<td><?php echo $this->encoding_subscription_form( 'silver', 9.0 ) ?></td>
@@ -404,9 +408,8 @@ class RTMediaEncoding {
 					<td><?php echo $this->encoding_subscription_form( 'platinum', 999.0 ) ?></td>
 				</tr>
 			</tbody>
-		</table><br/><?php
+		</table><br /><?php
 	}
-
 
 	public function add_media_thumbnails( $post_id ) {
 		//global $rtmedia_ffmpeg;
@@ -424,7 +427,7 @@ class RTMediaEncoding {
 		$largest_thumb = false;
 		$upload_thumbnail_array = array();
 		//var_dump($post_thumbs_array['thumbs']);
-		foreach( $post_thumbs_array[ 'thumbs' ] as $thumbs => $thumbnail ) {
+		foreach ( $post_thumbs_array[ 'thumbs' ] as $thumbs => $thumbnail ) {
 //	    error_log("Thumb:" + var_export($post_thumbs_array['thumbs'][$thumbnail]));
 //	}
 //        for ($i = 1; $i <= sizeof($post_thumbs_array['thumbs']); $i++) {
@@ -439,7 +442,7 @@ class RTMediaEncoding {
 			$temp_name = $temp_name_array[ sizeof( $temp_name_array ) - 1 ];
 			$thumbinfo[ 'basename' ] = $temp_name;
 			$thumb_upload_info = wp_upload_bits( $thumbinfo[ 'basename' ], null, $thumbresource[ 'body' ] );
-			$upload_thumbnail_array[ ] = $thumb_upload_info[ 'url' ];
+			$upload_thumbnail_array[] = $thumb_upload_info[ 'url' ];
 			//var_dump($thumb_upload_info);
 //                $thumb_attachment = array(
 //                    'guid' => $thumb_upload_info['url'],
@@ -483,7 +486,7 @@ class RTMediaEncoding {
 	 * @since 1.0
 	 */
 	public function handle_callback() {
-		require_once( ABSPATH . 'wp-admin/includes/image.php' );
+		require_once ( ABSPATH . 'wp-admin/includes/image.php');
 		if ( isset( $_REQUEST[ 'job_id' ] ) && isset( $_REQUEST[ 'download_url' ] ) && isset( $_POST[ 'thumbs' ] ) ) {
 			$response = $_POST[ 'thumbs' ];
 			$flag = false;
@@ -515,7 +518,7 @@ class RTMediaEncoding {
 				$post_mime_type = $new_wp_attached_file_pathinfo[ 'extension' ] == 'mp4' ? 'video/mp4' : 'audio/mp3';
 				try {
 					$file_bits = file_get_contents( $download_url );
-				} catch( Exception $e ) {
+				} catch ( Exception $e ) {
 					$flag = $e->getMessage();
 				}
 				if ( $file_bits ) {
@@ -532,6 +535,9 @@ class RTMediaEncoding {
 //                        $wpdb->update($wpdb->prefix . 'bp_activity', array('content' => $activity_content), array('id' => $media[0]->activity_id));
 					// Check if uplaod is through activity upload
 					//update_post_meta($attachment_id, 'rtmedia_encode_response', $_POST);
+
+
+
 
 
 					$activity_id = $media[ 0 ]->activity_id;
@@ -552,7 +558,7 @@ class RTMediaEncoding {
 
 			$this->update_usage( $this->api_key );
 
-			if ( isset( $_SERVER[ 'REMOTE_ADDR' ] ) && ( $_SERVER[ 'REMOTE_ADDR' ] == '4.30.110.155' ) ) {
+			if ( isset( $_SERVER[ 'REMOTE_ADDR' ] ) && ($_SERVER[ 'REMOTE_ADDR' ] == '4.30.110.155') ) {
 				$mail = true;
 			} else {
 				$mail = false;
@@ -566,8 +572,8 @@ class RTMediaEncoding {
                         <p>You can <a href="%s">retry the download</a>.</p>', 'rtmedia' ), get_edit_post_link( $attachment_id ), $flag, $download_link );
 				$users = get_users( array( 'role' => 'administrator' ) );
 				if ( $users ) {
-					foreach( $users as $user )
-						$admin_email_ids[ ] = $user->user_email;
+					foreach ( $users as $user )
+						$admin_email_ids[] = $user->user_email;
 					add_filter( 'wp_mail_content_type', create_function( '', 'return "text/html";' ) );
 					wp_mail( $admin_email_ids, $subject, $message );
 				}
@@ -584,7 +590,7 @@ class RTMediaEncoding {
 	public function free_encoding_subscribe() {
 		$email = get_site_option( 'admin_email' );
 		$usage_details = get_site_option( 'rtmedia-encoding-usage' );
-		if ( isset( $usage_details[ $this->api_key ]->plan->name ) && ( strtolower( $usage_details[ $this->api_key ]->plan->name ) == 'free' ) ) {
+		if ( isset( $usage_details[ $this->api_key ]->plan->name ) && (strtolower( $usage_details[ $this->api_key ]->plan->name ) == 'free') ) {
 			echo json_encode( array( 'error' => 'Your free subscription is already activated.' ) );
 		} else {
 			$free_subscription_url = esc_url_raw( add_query_arg( array( 'email' => urlencode( $email ) ), trailingslashit( $this->api_url ) . 'api/free/' ) );
@@ -592,7 +598,7 @@ class RTMediaEncoding {
 				$free_subscription_url = esc_url_raw( add_query_arg( array( 'email' => urlencode( $email ), 'apikey' => $this->api_key ), $free_subscription_url ) );
 			}
 			$free_subscribe_page = wp_remote_get( $free_subscription_url, array( 'timeout' => 120 ) );
-			if ( ! is_wp_error( $free_subscribe_page ) && ( ! isset( $free_subscribe_page[ 'headers' ][ 'status' ] ) || ( isset( $free_subscribe_page[ 'headers' ][ 'status' ] ) && ( $free_subscribe_page[ 'headers' ][ 'status' ] == 200 ) ) ) ) {
+			if ( ! is_wp_error( $free_subscribe_page ) && ( ! isset( $free_subscribe_page[ 'headers' ][ 'status' ] ) || (isset( $free_subscribe_page[ 'headers' ][ 'status' ] ) && ($free_subscribe_page[ 'headers' ][ 'status' ] == 200))) ) {
 				$subscription_info = json_decode( $free_subscribe_page[ 'body' ] );
 				if ( isset( $subscription_info->status ) && $subscription_info->status ) {
 					echo json_encode( array( 'apikey' => $subscription_info->apikey ) );
@@ -616,7 +622,7 @@ class RTMediaEncoding {
 	public function unsubscribe_encoding() {
 		$unsubscribe_url = trailingslashit( $this->api_url ) . 'api/cancel/' . $this->api_key;
 		$unsubscribe_page = wp_remote_post( $unsubscribe_url, array( 'timeout' => 120, 'body' => array( 'note' => $_GET[ 'note' ] ) ) );
-		if ( ! is_wp_error( $unsubscribe_page ) && ( ! isset( $unsubscribe_page[ 'headers' ][ 'status' ] ) || ( isset( $unsubscribe_page[ 'headers' ][ 'status' ] ) && ( $unsubscribe_page[ 'headers' ][ 'status' ] == 200 ) ) ) ) {
+		if ( ! is_wp_error( $unsubscribe_page ) && ( ! isset( $unsubscribe_page[ 'headers' ][ 'status' ] ) || (isset( $unsubscribe_page[ 'headers' ][ 'status' ] ) && ($unsubscribe_page[ 'headers' ][ 'status' ] == 200))) ) {
 			$subscription_info = json_decode( $unsubscribe_page[ 'body' ] );
 			if ( isset( $subscription_info->status ) && $subscription_info->status ) {
 				echo json_encode( array( 'updated' => __( 'Your subscription was cancelled successfully', 'rtmedia' ), 'form' => $this->encoding_subscription_form( $_GET[ 'plan' ], $_GET[ 'price' ] ) ) );
@@ -673,8 +679,14 @@ class RTMediaEncoding {
 		}
 
 
-		$upload_dir[ 'path' ] = trailingslashit( str_replace( $upload_dir[ 'subdir' ], '', $upload_dir[ 'path' ] ) ) . 'rtMedia/' . $rtmedia_upload_prefix . $id . $upload_dir[ 'subdir' ];
-		$upload_dir[ 'url' ] = trailingslashit( str_replace( $upload_dir[ 'subdir' ], '', $upload_dir[ 'url' ] ) ) . 'rtMedia/' . $rtmedia_upload_prefix . $id . $upload_dir[ 'subdir' ];
+		$upload_dir[ 'path' ] = trailingslashit(
+						str_replace( $upload_dir[ 'subdir' ], '', $upload_dir[ 'path' ] ) )
+				. 'rtMedia/' . $rtmedia_upload_prefix . $id .
+				$upload_dir[ 'subdir' ];
+		$upload_dir[ 'url' ] = trailingslashit(
+						str_replace( $upload_dir[ 'subdir' ], '', $upload_dir[ 'url' ] ) )
+				. 'rtMedia/' . $rtmedia_upload_prefix . $id
+				. $upload_dir[ 'subdir' ];
 
 		return $upload_dir;
 	}
@@ -701,7 +713,12 @@ class RTMediaEncoding {
 		$media_type = get_post_field( 'post_mime_type', $attachment );
 		$media_type_array = explode( "/", $media_type );
 		if ( $media_type_array[ 0 ] == "video" ) {
-			$file_object[ ] = array( "file" => $file, "url" => $url, "name" => $file_name, "type" => $media_type );
+			$file_object[] = array(
+				"file" => $file,
+				"url" => $url,
+				"name" => $file_name,
+				"type" => $media_type
+			);
 			$this->encoding( array( $media_id ), $file_object, array(), $autoformat );
 		}
 	}
@@ -710,6 +727,7 @@ class RTMediaEncoding {
 		$this->reencoding( intval( $_REQUEST[ 'rtreencoding' ] ) );
 		die();
 	}
+
 }
 
 if ( isset( $_REQUEST[ 'rtreencoding' ] ) ) {
