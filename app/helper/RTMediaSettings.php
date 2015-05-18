@@ -57,6 +57,7 @@ if ( ! class_exists( 'RTMediaSettings' ) ){
 				'rtmedia_affiliate_id' => '',
 				'rtmedia_enable_api' => 0,
 				'general_masonry_layout' => 0,
+                'general_direct_upload' => 0,
 			);
 
 			$defaults = apply_filters( 'rtmedia_general_content_default_values', $defaults );
@@ -143,6 +144,11 @@ if ( ! class_exists( 'RTMediaSettings' ) ){
 			if ( isset( $options['general_videothumbs'] ) && intval( $options['general_videothumbs'] ) > 10 ){
 				$options['general_videothumbs'] = 10;
 			}
+            
+            // Checking if video_thumbnails value is less then 0
+            if ( isset( $options['general_videothumbs'] ) && intval( $options['general_videothumbs'] ) <= 0 ){
+				$options['general_videothumbs'] = 2;
+			}
 
 			// Checking if number of media perpage is integer or not
 			if( isset( $options[ 'general_perPageMedia' ] ) ) {
@@ -152,7 +158,7 @@ if ( ! class_exists( 'RTMediaSettings' ) ){
 					$options[ 'general_perPageMedia' ] = round( $options[ 'general_perPageMedia' ] );
 				}
 			}
-
+            
 			return $options;
 		}
 
@@ -182,8 +188,12 @@ if ( ! class_exists( 'RTMediaSettings' ) ){
 				if ( $is_rewrite_rule_flush ){
 					flush_rewrite_rules( false );
 				}
+                $settings_saved = '';
+                if( !isset( $_GET[ 'settings-saved' ] ) ) {
+                    $settings_saved = '&settings-saved=true';
+                }
 				if( isset( $_SERVER['HTTP_REFERER'] ) ){
-					wp_redirect( $_SERVER['HTTP_REFERER'] );
+					wp_redirect( $_SERVER['HTTP_REFERER'] . $settings_saved );
 				}
 				global $rtmedia;
 				$rtmedia->options = $options;
