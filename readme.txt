@@ -1,12 +1,12 @@
 === rtMedia for WordPress, BuddyPress and bbPress ===
-Contributors: rtcamp, rittesh.patel, sanketparmar, sagarjadhav, pranalipatel, pushpak.pop, faishal, desaiuditd, rahul286, JoshuaAbenazer, gagan0123, saurabhshukla, nitun.lanjewar, umesh.nevase, suhasgirgaonkar, neerukoul, hrishiv90, kanakiyajay, jarretc, tobiaskluge, rafaelfunchal, UmeshSingla, mehulkaklotar, tannermirabel, kishores
+Contributors: rtcamp, rittesh.patel, sanketparmar, sagarjadhav, pranalipatel, jignesh.nakrani, pushpak.pop, faishal, desaiuditd, rahul286, JoshuaAbenazer, gagan0123, saurabhshukla, nitun.lanjewar, umesh.nevase, suhasgirgaonkar, neerukoul, hrishiv90, kanakiyajay, jarretc, tobiaskluge, rafaelfunchal, UmeshSingla, mehulkaklotar, tannermirabel, kishores
 Donate link: http://rtcamp.com/donate/
 Tags: BuddyPress, media, multimedia, album, audio, songs, music, video, photo, image, upload, share, MediaElement.js, ffmpeg, kaltura, media-node, rtMedia, WordPress, bbPress, masonry
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Requires at least: WordPress 3.6
-Tested up to: WordPress 4.2.2 + BuddyPress 2.3.1
-Stable tag: 3.8.7
+Tested up to: WordPress 4.2.2 + BuddyPress 2.3.2.1
+Stable tag: 3.8.8
 
 Add albums, photo, audio/video encoding, privacy, sharing, front-end uploads & more. All this works on mobile/tablets devices.
 
@@ -141,6 +141,13 @@ http://www.youtube.com/watch?v=dJrykKQGDcs
 == Changelog ==
 
 Please visit [rtMedia's Roadmap page](http://rtcamp.com/rtmedia/roadmap/?utm_source=readme&utm_medium=plugin&utm_campaign=buddypress-media "Visit rtMedia's Features page") to get some details about future releases.
+
+= 3.8.8 =
+* Fix media comment ordering
+* Fix login popup
+* Lightbox changes for mobile devices
+* Added privacy option in uploader shortcode
+* Update Dutch and Danish translations
 
 = 3.8.7 =
 * Update language files
@@ -1018,8 +1025,8 @@ Please visit [rtMedia's Roadmap page](http://rtcamp.com/rtmedia/roadmap/?utm_sou
 
 == Upgrade Notice ==
 
-= 3.8.7 =
-Requires BuddyPress 1.7 or higher, if using BuddyPress. Update language files, fix CSS conflict with BuddyPress Cover plugin in rtMedia admin settings, bug fixes.
+= 3.8.8 =
+Requires BuddyPress 1.7 or higher, if using BuddyPress. Fix media comment ordering,lightbox changes for mobile devices, added privacy option in uploader shortcode, update dutch and danish translations.
 
 == Sponsors ==
 
